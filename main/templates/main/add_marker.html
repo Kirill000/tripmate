@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Marker</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <style>
+        #map { height: 400px; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        .form-group button { padding: 10px 20px; }
+    </style>
+</head>
+<body>
+    <h1>Add Marker</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <!-- Пункт отправления -->
+        <div class="form-group">
+            <label for="start_point">Start Point (Address or select on map):</label>
+            <input type="text" id="start_point" name="start_point" required>
+            <button type="button" onclick="setStartFromMap()">Select from Map</button>
+        </div>
+
+        <!-- Пункт прибытия -->
+        <div class="form-group">
+            <label for="end_point">End Point (Address or select on map):</label>
+            <input type="text" id="end_point" name="end_point" required>
+            <button type="button" onclick="setEndFromMap()">Select from Map</button>
+        </div>
+
+        <!-- Тип транспорта -->
+        <div class="form-group">
+            <label for="transport_type">Transport Type:</label>
+            <select id="transport_type" name="transport_type" required>
+                <option value="personal">Личный транспорт</option>
+                <option value="carsharing">Каршеринг</option>
+                <option value="taxi">Такси</option>
+                <option value="other">Другое</option>
+            </select>
+        </div>
+
+        <!-- Другое (если выбран "Другое") -->
+        <div class="form-group" id="other_transport_group" style="display: none;">
+            <label for="other_transport">Specify Other Transport:</label>
+            <input type="text" id="other_transport" name="other_transport">
+        </div>
+
+        <!-- Количество человек -->
+        <div class="form-group">
+            <label for="people_count">Number of People:</label>
+            <input type="number" id="people_count" name="people_count" min="1" required>
+        </div>
+
+        <!-- Ориентир (фото) -->
+        <div class="form-group">
+            <label for="landmark_photo">Landmark Photo:</label>
+            <input type="file" id="landmark_photo" name="landmark_photo">
+        </div>
+
+        <!-- Описание ориентира -->
+        <div class="form-group">
+            <label for="landmark_description">Landmark Description:</label>
+            <textarea id="landmark_description" name="landmark_description" rows="4"></textarea>
+        </div>
+
+        <!-- Цена -->
+        <div class="form-group">
+            <label for="price">Price (RUB):</label>
+            <input type="number" id="price" name="price" min="0" required>
+        </div>
+
+        <!-- Время действия (от) -->
+        <div class="form-group">
+            <label for="active_from">Active From:</label>
+            <input type="datetime-local" id="active_from" name="active_from" required>
+        </div>
+
+        <!-- Время действия (до) -->
+        <div class="form-group">
+            <label for="active_to">Active To:</label>
+            <input type="datetime-local" id="active_to" name="active_to" required>
+        </div>
+
+        <!-- Комментарий -->
+        <div class="form-group">
+            <label for="comment">Comment:</label>
+            <textarea id="comment" name="comment" rows="4"></textarea>
+        </div>
+
+        <!-- Контакты -->
+        <div class="form-group">
+            <label for="telegram">Telegram:</label>
+            <input type="text" id="telegram" name="telegram">
+        </div>
+        <div class="form-group">
+            <label for="whatsapp">WhatsApp:</label>
+            <input type="text" id="whatsapp" name="whatsapp">
+        </div>
+        <div class="form-group">
+            <label for="vk">VK:</label>
+            <input type="text" id="vk" name="vk">
+        </div>
+        <div class="form-group">
+            <label for="phone_number">Phone Number:</label>
+            <input type="text" id="phone_number" name="phone_number">
+        </div>
+
+        <!-- Кнопка отправки -->
+        <div class="form-group">
+            <button type="submit">Add Marker</button>
+        </div>
+    </form>
+
+    <!-- Карта -->
+    <div id="map"></div>
+
+    <script>
+        // Инициализация карты
+        var map = L.map('map').setView([55.7558, 37.6176], 10); // Центр на Москве
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Маркеры для выбора точек
+        var startMarker, endMarker;
+
+        // Функция для установки начальной точки
+        function setStartFromMap() {
+            map.on('click', function(e) {
+                if (startMarker) {
+                    map.removeLayer(startMarker);
+                }
+                startMarker = L.marker(e.latlng).addTo(map);
+                document.getElementById('start_point').value = e.latlng.lat + ', ' + e.latlng.lng;
+            });
+        }
+
+        // Функция для установки конечной точки
+        function setEndFromMap() {
+            map.on('click', function(e) {
+                if (endMarker) {
+                    map.removeLayer(endMarker);
+                }
+                endMarker = L.marker(e.latlng).addTo(map);
+                document.getElementById('end_point').value = e.latlng.lat + ', ' + e.latlng.lng;
+            });
+        }
+
+        // Показать/скрыть поле "Другое" при выборе типа транспорта
+        document.getElementById('transport_type').addEventListener('change', function() {
+            var otherTransportGroup = document.getElementById('other_transport_group');
+            if (this.value === 'other') {
+                otherTransportGroup.style.display = 'block';
+            } else {
+                otherTransportGroup.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

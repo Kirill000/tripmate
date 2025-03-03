@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Profile</title>
+</head>
+<body>
+    <h1>Edit Profile</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ user_form.as_p }}
+        {{ profile_form.as_p }}
+        <button type="submit">Save</button>
+    </form>
+    <a href="{% url 'map' %}">Back to Map</a>
+    <a href="{% url 'logout' %}">Logout</a>
+</body>
+</html>
