@@ -1,4 +1,4 @@
-from django import forms
+from django import forms 
 from .models import Marker, Message
 from django.contrib.auth.models import User
 from .models import Profile
@@ -6,8 +6,19 @@ from .models import Profile
 class MarkerForm(forms.ModelForm):
     class Meta:
         model = Marker
-        fields = ['transport_type', 'other_transport', 'people_count', 'start_point', 'end_point', 'landmark_photo', 'landmark_description', 'price', 'active_from', 'active_to', 'comment', 'telegram', 'whatsapp', 'vk', 'phone_number']
-
+        exclude = ['user'] 
+        fields = [
+            'user',
+            'start_point', 'start_lat', 'start_lon',
+            'end_point', 'end_lat', 'end_lon',
+            'transport_type', 'other_transport',
+            'people_count',
+            'landmark_photo', 'landmark_description',
+            'price', 'active_from', 'active_to',
+            'comment',
+            'telegram', 'whatsapp', 'vk', 'phone_number',
+        ]
+        
 class MessageForm(forms.ModelForm):
     class Meta:
         model = Message

@@ -1,0 +1,44 @@
+.card-custom {
+    border-radius: 1rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    padding: 1.5rem;
+    background-color: #fff;
+}
+
+.chat-box {
+    height: 400px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 1rem;
+    background: #f9f9f9;
+    border-radius: 1rem;
+}
+
+.message-sent {
+    text-align: right;
+    background-color: #e6f3ff;
+    border-radius: 0.8rem;
+    padding: 0.5rem 1rem;
+    margin-bottom: 10px;
+    display: inline-block;
+}
+
+.message-received {
+    text-align: left;
+    background-color: #f1f1f1;
+    border-radius: 0.8rem;
+    padding: 0.5rem 1rem;
+    margin-bottom: 10px;
+    display: inline-block;
+}
+
+.message-time {
+    font-size: 0.8rem;
+    color: #888;
+}
+
+.status-indicator {
+    font-size: 0.85rem;
+    color: green;
+    margin-left: 10px;
+}

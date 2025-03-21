@@ -1,15 +1,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import Marker, Message
 from .forms import MarkerForm, MessageForm
 from django.contrib.auth import login
 from django.contrib.auth.forms import UserCreationForm
+from django.http import JsonResponse
 from django.contrib.auth import logout
 from .forms import UserForm, ProfileForm
-from .models import Profile
-from django.contrib.gis.geoip2 import GeoIP2
-
-# g = GeoIP2('geoip')
+from .models import Profile, Marker, Message
+from django.contrib.auth.models import User
 
 def register(request):
     if request.method == 'POST':
@@ -22,6 +20,73 @@ def register(request):
         form = UserCreationForm()
     return render(request, 'main/register.html', {'form': form})
 
+@login_required
+def chat_page(request, marker_id, to_user_id):
+    marker = get_object_or_404(Marker, pk=marker_id)
+    to_user = get_object_or_404(User, pk=to_user_id)
+    if request.user == to_user:
+        return render(request, 'main/cannot_chat_with_self.html')
+    return render(request, 'main/chat.html', {
+        'marker': marker,
+        'to_user': to_user,
+    })
+
+@login_required
+def dialog_list(request):
+    messages = Message.objects.filter(to_user=request.user).select_related('from_user', 'marker').order_by('-timestamp')
+    unique_senders = {}
+    for m in messages:
+        key = (m.from_user.id, m.marker.id)
+        if key not in unique_senders:
+            unique_senders[key] = m
+
+    return render(request, 'main/dialog_list.html', {'dialogs': unique_senders.values()})
+
+@login_required
+def get_messages(request, marker_id, to_user_id):
+    messages = Message.objects.filter(
+        marker_id=marker_id,
+        from_user__in=[request.user.id, to_user_id],
+        to_user__in=[request.user.id, to_user_id]
+    ).order_by('timestamp')
+    messages_data = [{
+        'from': m.from_user.username,
+        'text': m.text,
+        'timestamp': m.timestamp.strftime('%Y-%m-%d %H:%M'),
+        'notify_type': m.notification_type
+    } for m in messages]
+
+    # пометить как прочитанные
+    Message.objects.filter(to_user=request.user, is_read=False).update(is_read=True)
+
+    return JsonResponse({'messages': messages_data})
+
+@login_required
+def send_message(request):
+    if request.method == 'POST':
+        if "notify_type" in request.POST:
+            if request.POST['notify_type'] == 'user_query':
+                notification_type = request.POST['notify_type']
+                marker = Marker.objects.filter(id=request.POST['marker_id'])[0]
+                text = f"Пользователь отправил Вам запрос на совместную поездку {marker.title}"
+        else:
+            notification_type = None
+            text = request.POST['text']
+            
+        to_user_id = request.POST['to_user_id']
+        marker_id = request.POST['marker_id']
+
+        if int(to_user_id) != request.user.id:
+            Message.objects.create(
+                from_user=request.user,
+                notification_type=notification_type,
+                to_user_id=to_user_id,
+                marker_id=marker_id,
+                text=text
+            )
+            return JsonResponse({'status': 'ok'})
+    return JsonResponse({'status': 'error'})
+
 @login_required(login_url='login')
 def map_view(request):
     markers = Marker.objects.all()
@@ -31,42 +96,27 @@ def map_view(request):
         ip = x_forwarded_for.split(',')[-1].strip()
     else:
         ip = request.META.get('REMOTE_ADDR')
-    # g.city()
+    print(markers)
     return render(request, 'main/map.html', {'markers': markers})
 
 @login_required(login_url='login')
 def add_marker(request):
     if request.method == 'POST':
+        print(request.POST)
         form = MarkerForm(request.POST, request.FILES)
-        # if form.is_valid():
-        marker = form.save(commit=False)
-        marker.user = request.user
-        marker.save()
-        return redirect('map')
-        # else:
-            # print(form.data)
+        if form.is_valid():
+            marker = form.save(commit=False)
+            marker.user = request.user
+            marker.save()
+            return redirect('map')
+        else:
+            print(form.errors)
     else:
         form = MarkerForm()
     return render(request, 'main/add_marker.html', {'form': form})
 
 @login_required(login_url='login')
-def send_message(request, marker_id):
-    marker = get_object_or_404(Marker, id=marker_id)
-    if request.method == 'POST':
-        form = MessageForm(request.POST)
-        if form.is_valid():
-            message = form.save(commit=False)
-            message.from_user = request.user
-            message.to_user = marker.user
-            message.marker = marker
-            message.save()
-            return redirect('map')
-    else:
-        form = MessageForm()
-    return render(request, 'main/send_message.html', {'form': form, 'marker': marker})
-
-@login_required(login_url='login')
-def profile(request):
+def profile(request, user_id):
     user = request.user
     profile, created = Profile.objects.get_or_create(user=user)
     if request.method == 'POST':
