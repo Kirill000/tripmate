@@ -162,10 +162,13 @@
   </div>
   
   <script>
+    //let user_query_data = "{{ user_query_data }}";  // ← заранее объявляем переменную
+
     function loadMessages() {
 
         let box = document.getElementById('chat-box');
         let lastScrollTop = box.scrollTop;
+        let user_id = "{{request.user.id}}";
 
         fetch("{% url 'get_messages' marker.id to_user.id %}")
           .then(res => res.json())
@@ -179,7 +182,16 @@
               if (m.notify_type == null) {
                 box.innerHTML += `<p class="message ${messageClass}"><strong>${m.from}:</strong> ${m.text} <span class="timestamp">${m.timestamp.split(" ")[1]}</span></p>`;
               } else if (m.notify_type == 'user_query') {
-                box.innerHTML += `<p class="message ${messageClass}"><a href="">${m.text}</a><span class="timestamp">${m.timestamp.split(" ")[1]}</span><br><button class="user-query-reply" id="decline">Decline</button><button class="user-query-reply" id="approve">Approve</button></p>`;
+                pickupMapLink = `<br><small><a href="https://yandex.ru/maps/?rtext={{user_query_data.lon}}%2C{{user_query_data.lat}}&z=11.2" target="_blank">📍 Посмотреть на карте: {{user_query_data.point}}</a></small>`;
+                https://yandex.ru/maps/?ll=-14.002575%2C49.972191&mode=search&pt=%2C53.202742353507254&sll={{user_query_data.pickup_lon}}%2C{{user_query_data.pickup_lat}}&text={{user_query_data.pickup_lon}}%2C{{user_query_data.lat}}&z=11.2
+                box.innerHTML += `<p class="message ${messageClass}">
+                  <strong>${m.from}:</strong> ${m.text}
+                  ${pickupMapLink}
+                  <span class="timestamp">${m.timestamp.split(" ")[1]}</span><br>
+                  <button class="user-query-reply" id="decline">Decline</button>
+                  <button class="user-query-reply" id="approve">Approve</button>
+                </p>`;
+              
                 
                 document.getElementById("approve").addEventListener('click', function(e){
                   e.preventDefault();

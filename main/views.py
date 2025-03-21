@@ -8,6 +8,7 @@ from django.contrib.auth import logout
 from .forms import UserForm, ProfileForm
 from .models import Profile, Marker, Message
 from django.contrib.auth.models import User
+import json
 
 def register(request):
     if request.method == 'POST':
@@ -26,9 +27,16 @@ def chat_page(request, marker_id, to_user_id):
     to_user = get_object_or_404(User, pk=to_user_id)
     if request.user == to_user:
         return render(request, 'main/cannot_chat_with_self.html')
+    
+    try:
+        user_query_data = marker.users[str(request.user.id)]
+    except KeyError:
+        user_query_data = None
+    
     return render(request, 'main/chat.html', {
         'marker': marker,
         'to_user': to_user,
+        'user_query_data': user_query_data
     })
 
 @login_required
@@ -70,15 +78,20 @@ def send_message(request):
         if "notify_type" in request.POST:
             if request.POST['notify_type'] == 'user_query':
                 notification_type = request.POST['notify_type']
+                if str(request.user.id) in marker.users:
+                    return JsonResponse({'status': 'You cannot send query twice'})                
                 marker = Marker.objects.filter(id=request.POST['marker_id'])[0]
+                marker.users[str(request.user.id)] = {"is_approved": False, "lat": request.POST['pickup_lat'], "lon": request.POST['pickup_lon'], 'point': request.POST['pickup_point']}
+                marker.save()
                 text = f"Пользователь отправил Вам запрос на совместную поездку {marker.title}"
             elif request.POST['notify_type'] == 'approve' or request.POST['notify_type'] == 'decline':
                 notification_type = request.POST['notify_type']
                 Message.objects.filter(notification_type='user_query').delete()
                 if request.POST['notify_type'] == 'approve':
                     marker = Marker.objects.filter(id=request.POST['marker_id'])[0]
-                    marker.users[(int(marker.people_count)-1)] = request.POST['to_user_id']
-                    if int(marker.people_count-1) == 0:
+                    
+                    marker.users[request.POST['to_user_id']]['is_approved'] = True                    
+                    if int(marker.people_count)-1 == 0:
                         marker.is_active = False
                     marker.people_count = (marker.people_count-1)
                     marker.save()

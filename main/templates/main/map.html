@@ -125,9 +125,6 @@
 
 <header>
   <div>
-    <button onclick="toggleForm()">Add Marker</button>
-  </div>
-  <div>
     <a href="{% url 'profile' request.user.id %}">My Profile</a>
     <form method="post" action="{% url 'logout' %}" style="display: inline;">
       {% csrf_token %}
@@ -260,6 +257,10 @@
     user_id: "{{ marker.user.id }}",
     start_point: "{{ marker.start_point|escapejs }}",
     end_point: "{{ marker.end_point|escapejs }}",
+    start_lat: {{ marker.start_lat }},
+    start_lon: {{ marker.start_lon }},
+    end_lat: {{ marker.end_lat }},
+    end_lon: {{ marker.end_lon }},
     transport_type: "{{ marker.get_transport_type_display|escapejs }}",
     people_count: {{ marker.people_count }},
     price: "{{ marker.price }}",
@@ -285,9 +286,6 @@
     .bindPopup(popupHtml);
   {% endfor %}
 
-
-</script>
-<script>
   let selectingStart = false;
   let selectingEnd = false;
   let startMarker = null;
@@ -328,9 +326,25 @@
   }
 
   map.on('click', function(e) {
+    
     if (isDetailsOpen) return;  // Блокируем добавление маркера при открытом окне
     let lat = e.latlng.lat;
     let lng = e.latlng.lng;
+
+    if (waitingPickup) {
+      console.log('waiting pickup')
+      if (pickupMarker) map.removeLayer(pickupMarker);
+      pickupLat = e.latlng.lat;
+      pickupLng = e.latlng.lng;
+      pickupMarker = L.marker([pickupLat, pickupLng], { draggable: true }).addTo(map);
+      reverseGeocode(pickupLat, pickupLng, function(address) {
+        pickupPoint = address;
+        alert(`Место посадки выбрано: ${pickupPoint}`);
+        waitingPickup = false;
+        sendGoMessage(markerData);
+      });
+      return;
+    }    
 
     // Если в режиме выбора стартовой/конечной точки — используем старую логику
     if (selectingStart) {
@@ -388,7 +402,14 @@
 
 <script>
   let isDetailsOpen = false;
+  let pickupPoint = null;
+  let pickupLat = null;
+  let pickupLng = null;
+  let pickupMarker = null;
+  let waitingPickup = false;
+  
   let currentMarkerId = null;
+  let routeLine = null;
 
   function showDetails(data) {
     let content = `
@@ -419,20 +440,71 @@
       document.getElementById('markerDetailsCardConnect').remove();
       document.getElementById('go-button').remove();
     }
+
+    // Удалить старый маршрут
+    if (routeLine) {
+      map.removeLayer(routeLine);
+    }
+
+    // Нарисовать новый маршрут (линию между двумя точками)
+    const startCoords = [data.start_lat, data.start_lon];
+    const endCoords = [data.end_lat, data.end_lon];
+    routeLine = L.polyline([startCoords, endCoords], {
+      color: '#007bff',
+      weight: 5,
+      opacity: 0.8,
+      dashArray: '8,6'
+    }).addTo(map);
+
+    // Подогнать карту под маршрут
+    map.fitBounds(routeLine.getBounds(), { padding: [40, 40] });
+
     currentMarkerId = data.id;
     isDetailsOpen = true;
   }
 
   function hideDetails() {
+    const box = document.getElementById('details-box');
+    if (box) box.remove();
+    if (routeLine) map.removeLayer(routeLine);
+    isDetailsOpen = false;
     document.getElementById('markerDetailsCard').style.display = 'none';
     isDetailsOpen = false;
   }
 
-  function go(data){
+  function go(data) {
+    // Показываем плашку выбора точки
+    document.getElementById('pickupPrompt').style.display = 'block';
+  
+    // По кнопке "Подтвердить стартовую точку"
+    document.getElementById('confirmDefaultPickup').onclick = function() {
+      pickupPoint = data.start_point;
+      pickupLat = document.getElementById('start_lat').value || null;
+      pickupLng = document.getElementById('start_lon').value || null;
+      sendGoMessage(data);
+      document.getElementById('pickupPrompt').style.display = 'none';
+    };
+  
+    // По кнопке "Выбрать на карте"
+    document.getElementById('selectPickupFromMap').onclick = function() {
+      waitingPickup = true;
+      alert("Кликните по карте, чтобы указать точку, где Вас забрать");
+      hideDetails()
+      document.getElementById('pickupPrompt').style.display = 'none';
+    };
+  }
 
+  function sendGoMessage(data) {
+    console.log("Отправка сообщения пользователю...");
+    console.log("Pickup point:", pickupPoint);
+    console.log("Pickup coordinates:", pickupLat, pickupLng);
+    
     let formData = new FormData();
     formData.append("text", "");
     formData.append("to_user_id", data.user_id);
+    formData.append("pickup_point", pickupPoint)
+    formData.append("pickup_lat", pickupLat)
+    formData.append("pickup_lon", pickupLng)
     formData.append("marker_id", data.id);
     formData.append("notify_type", "user_query");
     formData.append("from_user", "{{request.user.id}}");
@@ -443,8 +515,8 @@
       body: formData
     }).then(() => {
       alert("Сообщение успешно отправлено!");
-      document.getElementById('go-button').style = "background-color: yellow";
-      document.getElementById('go-button').innerHTML = "Ожидание ответа";
+      //document.getElementById('go-button').style = "background-color: yellow";
+      //document.getElementById('go-button').innerHTML = "Ожидание ответа";
     });
   }
   
@@ -518,6 +590,16 @@
   </form>
 </div>
 
+<div id="pickupPrompt" style="display: none; position: fixed; top: 20%; left: 50%; transform: translateX(-50%); background: white; border-radius: 20px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.25); z-index: 1000; max-width: 400px; text-align: center;">
+  <h3>Где Вас забрать?</h3>
+  <p>Выберите точку на карте или подтвердите стартовую точку маршрута.</p>
+  <div style="margin: 16px 0;">
+    <button id="selectPickupFromMap" style="padding: 10px 16px; border-radius: 12px; border: none; background: #007bff; color: white; cursor: pointer;">Выбрать на карте</button>
+  </div>
+  <div>
+    <button id="confirmDefaultPickup" style="padding: 8px 16px; border-radius: 12px; border: none; background: #28a745; color: white; cursor: pointer;">Подтвердить стартовую точку</button>
+  </div>
+</div>
 
 </body>
 </html>

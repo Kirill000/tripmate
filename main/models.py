@@ -45,7 +45,7 @@ class Marker(models.Model):
     whatsapp = models.CharField(max_length=255, blank=True, null=True)
     vk = models.CharField(max_length=255, blank=True, null=True)
     phone_number = models.CharField(max_length=20, blank=True, null=True)
-    users = models.JSONField(blank=True, null=True)
+    users = models.JSONField(blank=False, null=False, default=dict)
 
 class Message(models.Model):
     from_user = models.ForeignKey(User, related_name='sent_messages', on_delete=models.CASCADE)
