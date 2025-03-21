@@ -171,14 +171,25 @@
           .then(res => res.json())
           .then(data => {
             let box = document.getElementById('chat-box');
+
             box.innerHTML = '';  // Очищаем чат
             data.messages.forEach(m => {
               // Если сообщение от текущего пользователя, добавляем класс .from-user, если от собеседника - .to-user
+              let messageClass = m.from === '{{ request.user.username }}' ? 'from-user' : 'to-user';
               if (m.notify_type == null) {
-                let messageClass = m.from === '{{ request.user.username }}' ? 'from-user' : 'to-user';
                 box.innerHTML += `<p class="message ${messageClass}"><strong>${m.from}:</strong> ${m.text} <span class="timestamp">${m.timestamp.split(" ")[1]}</span></p>`;
               } else if (m.notify_type == 'user_query') {
-                box.innerHTML += `<a href="">${m.text}</a><span class="timestamp">${m.timestamp.split(" ")[1]}</span><br><button>Decline</button><button>Approve</button>`;
+                box.innerHTML += `<p class="message ${messageClass}"><a href="">${m.text}</a><span class="timestamp">${m.timestamp.split(" ")[1]}</span><br><button class="user-query-reply" id="decline">Decline</button><button class="user-query-reply" id="approve">Approve</button></p>`;
+                
+                document.getElementById("approve").addEventListener('click', function(e){
+                  e.preventDefault();
+                  SendMessage(1, "approve");
+                })
+
+                document.getElementById("decline").addEventListener('click', function(e){
+                  e.preventDefault();
+                  SendMessage(1, "decline");
+                })
               }
             });
             box.scrollTop = box.scrollHeight; // Прокручиваем чат до конца
@@ -193,10 +204,27 @@
   
     document.getElementById('message-form').addEventListener('submit', function(e) {
       e.preventDefault();
+      SendMessage(0, this.id);
+    });
+
+    function SendMessage(notify, id){
+
       let formData = new FormData();
-      formData.append("text", document.getElementById('message-text').value);
+
       formData.append("to_user_id", document.getElementById('to_user_id').value);
       formData.append("marker_id", document.getElementById('marker_id').value);
+
+      if (!notify) {
+        msg = document.getElementById('message-text').value;
+      } else {
+        if (id == 'decline'){
+          msg = "К сожалению пользователь {{request.user}} отказал Вам в поездке :(";
+        } else {
+          msg = "Пользователь {{request.user}} подтвердил Ваш запрос на поездку!";
+        }
+      }
+      formData.append('notify_type', id);
+      formData.append("text", msg);
   
       fetch("{% url 'send_message' %}", {
         method: 'POST',
@@ -206,6 +234,6 @@
         document.getElementById('message-text').value = ''; // очищаем поле ввода
         loadMessages(); // перезагружаем чат
       });
-    });
+    }
   </script>
   

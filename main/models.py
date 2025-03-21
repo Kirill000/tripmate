@@ -23,6 +23,7 @@ class Marker(models.Model):
         ('taxi', 'Такси'),
         ('other', 'Другое'),
     ]
+    is_active = models.BooleanField(default=True)
     title = models.CharField(max_length=100)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     transport_type = models.CharField(max_length=50, choices=TRANSPORT_CHOICES)
@@ -44,6 +45,7 @@ class Marker(models.Model):
     whatsapp = models.CharField(max_length=255, blank=True, null=True)
     vk = models.CharField(max_length=255, blank=True, null=True)
     phone_number = models.CharField(max_length=20, blank=True, null=True)
+    users = models.JSONField(blank=True, null=True)
 
 class Message(models.Model):
     from_user = models.ForeignKey(User, related_name='sent_messages', on_delete=models.CASCADE)

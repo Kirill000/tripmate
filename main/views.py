@@ -53,7 +53,7 @@ def get_messages(request, marker_id, to_user_id):
         'from': m.from_user.username,
         'text': m.text,
         'timestamp': m.timestamp.strftime('%Y-%m-%d %H:%M'),
-        'notify_type': m.notification_type
+        'notify_type': m.notification_type,
     } for m in messages]
 
     # пометить как прочитанные
@@ -62,16 +62,28 @@ def get_messages(request, marker_id, to_user_id):
     return JsonResponse({'messages': messages_data})
 
 @login_required
-def send_message(request):
+def send_message(request): 
     if request.method == 'POST':
+
+        text = request.POST['text']
+
         if "notify_type" in request.POST:
             if request.POST['notify_type'] == 'user_query':
                 notification_type = request.POST['notify_type']
                 marker = Marker.objects.filter(id=request.POST['marker_id'])[0]
                 text = f"Пользователь отправил Вам запрос на совместную поездку {marker.title}"
+            elif request.POST['notify_type'] == 'approve' or request.POST['notify_type'] == 'decline':
+                notification_type = request.POST['notify_type']
+                Message.objects.filter(notification_type='user_query').delete()
+                if request.POST['notify_type'] == 'approve':
+                    marker = Marker.objects.filter(id=request.POST['marker_id'])[0]
+                    marker.users[(int(marker.people_count)-1)] = request.POST['to_user_id']
+                    if int(marker.people_count-1) == 0:
+                        marker.is_active = False
+                    marker.people_count = (marker.people_count-1)
+                    marker.save()
         else:
             notification_type = None
-            text = request.POST['text']
             
         to_user_id = request.POST['to_user_id']
         marker_id = request.POST['marker_id']
@@ -89,7 +101,7 @@ def send_message(request):
 
 @login_required(login_url='login')
 def map_view(request):
-    markers = Marker.objects.all()
+    markers = Marker.objects.filter(is_active=True)
     
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
     if x_forwarded_for:

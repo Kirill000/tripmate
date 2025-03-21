@@ -411,7 +411,10 @@
     document.getElementById('markerDetailsCard').style.display = 'flex';
     if (data.user != "{{request.user}}") {
       document.getElementById('markerDetailsCardConnect').href = `chat/${data.id}/${data.user_id}`;
-      document.getElementById('go-button').addEventListener('click', go(data))
+      document.getElementById('go-button').addEventListener('click', function(e){
+        e.preventDefault();
+        go(data);
+      });
     } else {
       document.getElementById('markerDetailsCardConnect').remove();
       document.getElementById('go-button').remove();
