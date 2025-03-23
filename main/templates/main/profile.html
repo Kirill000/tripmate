@@ -1,17 +1,103 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Profile</title>
-</head>
-<body>
-    <h1>Edit Profile</h1>
-    <form method="post">
-        {% csrf_token %}
-        {{ user_form.as_p }}
-        {{ profile_form.as_p }}
-        <button type="submit">Save</button>
-    </form>
-    <a href="{% url 'map' %}">Back to Map</a>
-    <a href="{% url 'logout' %}">Logout</a>
-</body>
-</html>
+{% extends "main/base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link href="{% static "css/profile.css" %}" rel="stylesheet" />
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+
+     <!-- Скрытая форма редактирования -->
+     <div id="profile-form-container" style="display: none; margin-top: 20px;">
+        <form method="post">
+            {% csrf_token %}
+            {{ user_form.as_p }}
+            {{ profile_form.as_p }}
+            <button type="submit" class="save-button">Сохранить</button>
+            <button class="edit-button" onclick="toggleProfileForm()">Закрыть</button>
+        </form>
+    </div>
+
+    <div class="profile-info">
+        <h2>Информация о пользователе</h2>
+        <ul>
+            <li><strong>Имя:</strong> {{ profile_data.first_name }}</li>
+            <li><strong>Фамилия:</strong> {{ profile_data.last_name }}</li>
+            <li><strong>Телефон:</strong> {{ profile_data.phone_number }}</li>
+            <li><strong>Telegram:</strong> {{ profile_data.telegram }}</li>
+            <li><strong>WhatsApp:</strong> {{ profile_data.whatsapp }}</li>
+            <li><strong>VK:</strong> {{ profile_data.vk }}</li>
+            <li><strong>Успешных поездок:</strong> {{ profile_data.successful_trips }}</li>
+            <li><strong>Неуспешных поездок:</strong> {{ profile_data.unsuccessful_trips }}</li>
+            <li><strong>Статус:</strong>
+                {% if is_online %}
+                    <span class="status online">Онлайн</span>
+                {% else %}
+                    <span class="status offline">Оффлайн</span>
+                {% endif %}
+            </li>
+        </ul>
+
+        <button class="edit-button" onclick="toggleProfileForm()">Редактировать профиль</button>
+    </div>    
+
+    <div class="markers-section">
+        <h2>Мои маркеры</h2>
+        <div class="marker-list">
+            {% for marker in own_markers %}
+                <div class="marker-card">
+                    <h3>{{ marker.title }}</h3>
+                    <p><b>Транспорт</b>: {{ marker.get_transport_type_display }}</p>
+                    <p><b>Маршрут</b>: {{ marker.start_point }} → {{ marker.end_point }}</p>
+                    <p><b>Кол-во мест</b>: {{ marker.people_count }}</p>
+                    <form method="post" class="cancel-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="cancel_trip_id" value="{{ marker.id }}">
+                        {% if marker.is_active %}
+                            <a href="{% url 'edit_marker' marker.id %}" class="btn-cancel" style="background-color: #4c70ff">Редактировать</a> |
+                            <a href="{% url 'delete_marker' marker.id %}" class="btn-cancel">Удалить</a>
+                        {% else %}
+                            <button class="btn-cancel">Удалена</button>
+                        {% endif %}
+                    </form>
+                </div>
+            {% empty %}
+                <p>Нет активных маркеров.</p>
+            {% endfor %}
+        </div>
+
+        <h2>Я откликнулся на</h2>
+        <div class="marker-list">
+            {% for marker in responded_markers %}
+                <div class="marker-card">
+                    <h3>{{ marker.title }}</h3>
+                    <p><b>Транспорт</b>: {{ marker.get_transport_type_display }}</p>
+                    <p><b>Маршрут</b>: {{ marker.start_point }} → {{ marker.end_point }}</p>
+                    <p><b>Кол-во мест</b>: {{ marker.people_count }}</p>
+                    <form method="post" class="cancel-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="cancel_trip_id" value="{{ marker.id }}">
+                        <button type="submit" class="btn-cancel">Отменить поездку</button>
+                    </form>
+                </div>
+            {% empty %}
+                <p>Вы не откликались ни на один маршрут.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="nav-buttons">
+        <a href="{% url 'map' %}" class="btn-back">Назад к карте</a>
+        <a href="{% url 'logout' %}" class="btn-logout">Выйти</a>
+    </div>
+</div>
+<script>
+    function toggleProfileForm() {
+        const formBlock = document.getElementById("profile-form-container");
+        const profile_info = document.getElementById("profile-info")
+        formBlock.style.display = (formBlock.style.display === "none") ? "block" : "none";
+        profile_info.style.display = (formBlock.style.display === "none") ? "none" : "block";
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends "main/base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link href="{% static 'css/edit_marker.css' %}" rel="stylesheet" />
+{% endblock %}
+
+{% block content %}
+<div class="marker-edit-container">
+    <h2>Редактировать метку: {{ marker.title }}</h2>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="form-section">
+            {{ form.title.label_tag }} {{ form.title }}
+        </div>
+        <div class="form-section">
+            {{ form.transport_type.label_tag }} {{ form.transport_type }}
+        </div>
+        <div class="form-section">
+            {{ form.other_transport.label_tag }} {{ form.other_transport }}
+        </div>
+        <div class="form-section">
+            {{ form.people_count.label_tag }} {{ form.people_count }}
+        </div>
+        
+        <div class="form-section">
+            {{ form.start_point.label_tag }}
+            <input type="text" name="start_point" value="{{ form.start_point.value }}" readonly class="readonly-field" />
+        </div>
+
+        <div class="form-section">
+            {{ form.start_lat.label_tag }}
+            <input type="text" name="start_lat" value="{{ form.start_lat.value }}" readonly class="readonly-field" />
+        </div>
+
+        <div class="form-section">
+            {{ form.start_lon.label_tag }}
+            <input type="text" name="start_lon" value="{{ form.start_lon.value }}" readonly class="readonly-field" />
+        </div>
+
+        <div class="form-section">
+            {{ form.end_lat.label_tag }}
+            <input type="text" name="end_lat" value="{{ form.end_lat.value }}" readonly class="readonly-field" />
+        </div>
+
+        <div class="form-section">
+            {{ form.end_lon.label_tag }}
+            <input type="text" name="end_lon" value="{{ form.end_lon.value }}" readonly class="readonly-field" />
+        </div>
+
+        <div class="form-section">
+            {{ form.end_point.label_tag }}
+            <input type="text" name="end_point" value="{{ form.end_point.value }}" readonly class="readonly-field" />
+        </div>
+
+        <div class="form-section">
+            {{ form.landmark_photo.label_tag }} {{ form.landmark_photo }}
+        </div>
+        <div class="form-section">
+            {{ form.landmark_description.label_tag }} {{ form.landmark_description }}
+        </div>
+        <div class="form-section">
+            {{ form.price.label_tag }} {{ form.price }}
+        </div>
+        <div class="form-section">
+            {{ form.active_from.label_tag }} {{ form.active_from }}
+        </div>
+        <div class="form-section">
+            {{ form.active_to.label_tag }} {{ form.active_to }}
+        </div>
+        <div class="form-section">
+            {{ form.comment.label_tag }} {{ form.comment }}
+        </div>
+        <div class="form-section">
+            {{ form.telegram.label_tag }} {{ form.telegram }}
+        </div>
+        <div class="form-section">
+            {{ form.whatsapp.label_tag }} {{ form.whatsapp }}
+        </div>
+        <div class="form-section">
+            {{ form.vk.label_tag }} {{ form.vk }}
+        </div>
+        <div class="form-section">
+            {{ form.phone_number.label_tag }} {{ form.phone_number }}
+        </div>
+
+        <button type="submit" class="save-button">Сохранить</button>
+    </form>
+
+    <h3>Пользователи в этой поездке:</h3>
+    <ul>
+        {% for user_id, info in marker.users.items %}
+            {% if user_id|add:""|add:""|add:""|add:""|add:""|add:""|add:"" != request.user.id|stringformat:"s" %}
+                <li>
+                    {{ user_id }} 
+                    — {{ info.point }}
+                    <form method="post" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="exclude_user_id" value="{{ user_id }}">
+                        <button type="submit" class="btn-cancel">Исключить пользователя</button>
+                    </form>
+                </li>
+            {% endif %}
+        {% empty %}
+            <li>Нет участников</li>
+        {% endfor %}
+    </ul>
+
+    <a href="{% url 'profile' user.id %}" class="btn-back">Назад к профилю</a>
+</div>
+{% endblock %}

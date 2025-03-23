@@ -1,0 +1,105 @@
+.edit-marker-container {
+    max-width: 800px;
+    margin: 30px auto;
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.edit-marker-container h2 {
+    font-size: 26px;
+    margin-bottom: 25px;
+}
+
+.form-section {
+    margin-bottom: 20px;
+}
+
+.form-section label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.form-section input,
+.form-section select,
+.form-section textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    font-size: 15px;
+    background-color: #fafafa;
+}
+
+.form-section .readonly-field {
+    background-color: #eee;
+    color: #555;
+    cursor: not-allowed;
+}
+
+.save-button {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    font-size: 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.save-button:hover {
+    background-color: #218838;
+}
+
+hr {
+    margin: 40px 0 20px;
+    border: 1px solid #ddd;
+}
+
+.user-list {
+    list-style: none;
+    padding: 0;
+}
+
+.user-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.exclude-form {
+    margin-left: 15px;
+}
+
+.exclude-button {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    font-size: 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.exclude-button:hover {
+    background-color: #c82333;
+}
+
+.back-link {
+    display: inline-block;
+    margin-top: 25px;
+    text-decoration: none;
+    color: #007bff;
+    font-size: 15px;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}

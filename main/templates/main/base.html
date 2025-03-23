@@ -1,18 +1,66 @@
+{% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>{% block title %}My Map App{% endblock %}</title>
+  <meta charset="UTF-8">
+  <title>{% block title %}Map with Markers{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <link href="{% static "css/base.css" %}" rel="stylesheet" />
+
+  {% block extra_css %}
+  <!-- Дополнительные стили можно подключить из других шаблонов -->
+  {% endblock %}
 </head>
 <body>
-    <header>
-        <nav>
-            <a href="{% url 'map' %}">Map</a>
-            <a href="{% url 'profile' %}">Profile</a>
-            <a href="{% url 'logout' %}">Logout</a>
-        </nav>
-    </header>
-    <main>
-        {% block content %}{% endblock %}
-    </main>
+
+  <header>
+    <div>
+      <a href="{% url 'profile' request.user.id %}">My Profile</a>
+      <form method="post" action="{% url 'logout' %}" style="display: inline;">
+        {% csrf_token %}
+        <button type="submit">Logout</button>
+      </form>
+    </div>
+  </header>
+
+  <main>
+    {% block content %}
+    <!-- Контент страницы -->
+    {% endblock %}
+  </main>
+
+  {% block extra_js %}
+  <!-- Дополнительные скрипты можно подключить из других шаблонов -->
+  {% endblock %}
+  <script>
+    // Запрашиваем разрешение на уведомления
+    if (Notification.permission !== "granted") {
+      Notification.requestPermission();
+    }
+  
+    let myStorage = window.localStorage;
+  
+    function checkMessages() {
+      fetch("{% url 'check_new_messages' %}")
+        .then(response => response.json())
+        .then(data => {
+          for (let i = 0; i < Object.keys(data.new_messages).length; ++i){
+            console.log(myStorage.getItem(Object.keys(data.new_messages)[i]));
+            if (myStorage.getItem(Object.keys(data.new_messages)[i]) != data.new_messages[Object.keys(data.new_messages)[i]]){
+              new Notification("Новое сообщение!", {
+                body: Object.keys(data.new_messages)[i]+": "+data.new_messages[Object.keys(data.new_messages)[i]],
+              });
+              myStorage.setItem(Object.keys(data.new_messages)[i], data.new_messages[Object.keys(data.new_messages)[i]]);
+              break;
+            }
+          }
+        });
+    }
+  
+    setInterval(checkMessages, 20000); // проверка каждые 10 секунд
+  </script>
+  
+
 </body>
 </html>

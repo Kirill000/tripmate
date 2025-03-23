@@ -1,15 +1,18 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Login</title>
-</head>
-<body>
-    <h2>Login</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Login</button>
-    </form>
-    <p>Don't have an account? <a href="{% url 'register' %}">Register here</a></p>
-</body>
-</html>
+{% load static %}
+
+<link href="{% static "css/login.css" %}" rel="stylesheet" />
+
+<h2>Login</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Login</button>
+</form>
+<p>Don't have an account? <a href="{% url 'register' %}">Register here</a></p>
+
+{% comment %} 
+{% block extra_js %}
+
+
+{% endblock %} 
+{% endcomment %}

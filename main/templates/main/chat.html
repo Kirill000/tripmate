@@ -1,251 +1,121 @@
+{% extends "main/base.html" %}
+{% load static %}
 
+{% block extra_css %}
+<link href="{% static "css/chat.css" %}" rel="stylesheet" />
+{% endblock %}
 
-<style>
-    /* Контейнер чата */
-    .chat-container {
-      width: 100%;
-      max-width: 700px;
-      margin: 0 auto;
-      padding: 20px;
-      background-color: #f1f2f6;
-      border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      font-family: 'Roboto', sans-serif;
-    }
-  
-    /* Заголовок чата */
-    .chat-header {
-      font-size: 26px;
-      font-weight: bold;
-      color: #333;
-      margin-bottom: 10px;
-    }
-  
-    /* Информация о собеседнике */
-    .chat-info {
-      font-size: 16px;
-      color: #888;
-      margin-bottom: 15px;
-    }
-  
-    /* Окно чата */
-    .chat-box {
-      height: 350px;
-      overflow-y: auto;
-      border: 1px solid #e0e0e0;
-      padding: 15px;
-      background-color: #fff;
-      border-radius: 10px;
-      margin-bottom: 20px;
-      font-size: 14px;
-      line-height: 1.6;
-      color: #333;
-      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
-      display: flex;
-      flex-direction: column;
-    }
-  
-    /* Форматирование сообщений */
-    .chat-box p {
-      margin: 10px 0;
-      display: flex;
-      justify-content: flex-start;
-      align-items: flex-end;
-    }
-  
-    /* Сообщение отправителя */
-    .chat-box .message.from-user {
-      background-color: #0078FF;
-      color: white;
-      margin-left: auto;
-      text-align: right;
-      border-radius: 18px;
-      padding: 15px;
-      max-width: 70%;
-      word-wrap: break-word;
-    }
+{% block content %}
+<div class="chat-container">
+  <h2 class="chat-header">Чат по маркеру {{marker.id}}</h2>
+  <small><b>Пункт отправки:</b> {{ marker.start_point }}</small><br>
+  <small><b>Пункт назначения:</b> {{ marker.end_point }}</small>
+  <p class="chat-info">Собеседник: {{ to_user.username }} {% if to_user.userstatus.is_online %}(Онлайн){% endif %}</p>
 
-    .message {
-        position: relative;
-    }
-  
-    /* Сообщение собеседника */
-    .chat-box .message.to-user {
-      background-color: #e1e1e1;
-      color: #333;
-      margin-right: auto;
-      text-align: left;
-      border-radius: 18px;
-      padding: 12px;
-      max-width: 70%;
-      word-wrap: break-word;
-    }
-  
-    /* Время отправки сообщений */
-    .chat-box small {
-      font-size: 12px;
-      color: #888;
-      margin-top: 5px;
-      display: block;
-    }
-  
-    /* Форма отправки сообщения */
-    .chat-form {
-      display: flex;
-      flex-direction: column;
-    }
-  
-    .message-text {
-      height: 50px;
-      padding: 15px;
-      border: 1px solid #ddd;
-      border-radius: 25px;
-      resize: none;
-      font-size: 14px;
-      color: #333;
-      outline: none;
-      transition: border-color 0.3s;
-      background-color: #f9f9f9;
-    }
-  
-    .message-text:focus {
-      border-color: #0078FF;
-      box-shadow: 0 0 5px rgba(0, 120, 255, 0.3);
-    }
-  
-    .submit-btn {
-      padding: 10px 15px;
-      background-color: #0078FF;
-      color: white;
-      border: none;
-      border-radius: 25px;
-      cursor: pointer;
-      font-size: 16px;
-      margin-top: 10px;
-      transition: background-color 0.3s;
-    }
-  
-    .submit-btn:hover {
-      background-color: #0056b3;
-    }
-  
-    .submit-btn:disabled {
-      background-color: #a0a0a0;
-      cursor: not-allowed;
-    }
+  <div id="chat-box" class="chat-box"></div>
 
-    .timestamp {
-        font-size: 8px;
-        color: #aaa;
-        position: absolute;
-        bottom: 2px;
-        right: 15px;
-      }
-  </style>
-  
-  
+  <form id="message-form" class="chat-form">
+    <input id="to_user_id" type="hidden" name="to_user_id" value="{{ to_user.id }}">
+    <input id="marker_id" type="hidden" name="marker_id" value="{{ marker.id }}">
+    <textarea name="text" id="message-text" class="message-text" placeholder="Введите сообщение..." required></textarea>
+    <button type="submit" class="submit-btn">Отправить</button>
+  </form>
+</div>
+{% endblock %}
 
-  <div class="chat-container">
-    <h2 class="chat-header">Чат по маркеру {{marker.id}}</h2>
-    <small><b>Пункт отправки:</b> {{ marker.start_point }}</small><br>
-    <small><b>Пункт назначения:</b> {{ marker.end_point }}</small>
-    <p class="chat-info">Собеседник: {{ to_user.username }} {% if to_user.userstatus.is_online %}(Онлайн){% endif %}</p>
-  
-    <div id="chat-box" class="chat-box"></div>
-  
-    <form id="message-form" class="chat-form">
-      <input id="to_user_id" type="hidden" name="to_user_id" value="{{ to_user.id }}">
-      <input id="marker_id" type="hidden" name="marker_id" value="{{ marker.id }}">
-      <textarea name="text" id="message-text" class="message-text" placeholder="Введите сообщение..." required></textarea>
-      <button type="submit" class="submit-btn">Отправить</button>
-    </form>
-  </div>
-  
-  <script>
-    //let user_query_data = "{{ user_query_data }}";  // ← заранее объявляем переменную
+{% block extra_js %}
 
-    function loadMessages() {
+<script>
 
+  //let user_query_data = "{{ user_query_data }}";  // ← заранее объявляем переменную
+
+  function loadMessages() {
+
+    let box = document.getElementById('chat-box');
+    let lastScrollTop = box.scrollTop;
+    let user_id = "{{request.user.id}}";
+
+    fetch("{% url 'get_messages' marker.id to_user.id %}")
+      .then(res => res.json())
+      .then(data => {
         let box = document.getElementById('chat-box');
-        let lastScrollTop = box.scrollTop;
-        let user_id = "{{request.user.id}}";
 
-        fetch("{% url 'get_messages' marker.id to_user.id %}")
-          .then(res => res.json())
-          .then(data => {
-            let box = document.getElementById('chat-box');
+        box.innerHTML = '';  // Очищаем чат
+        data.messages.forEach(m => {
+          console.log(m);
+          // Если сообщение от текущего пользователя, добавляем класс .from-user, если от собеседника - .to-user
+          console.log(m.notify_type);
+          let messageClass = m.from === '{{ request.user.username }}' ? 'from-user' : 'to-user';
+          
+          if (m.notify_type == 'user_query') {
+            pickupMapLink = `<br><small><a href="https://yandex.ru/maps/?rtext={{user_query_data.lon}}%2C{{user_query_data.lat}}&z=11.2" target="_blank">📍 Посмотреть на карте: {{user_query_data.point}}</a></small>`;
+            //https://yandex.ru/maps/?ll=-14.002575%2C49.972191&mode=search&pt=%2C53.202742353507254&sll={{user_query_data.pickup_lon}}%2C{{user_query_data.pickup_lat}}&text={{user_query_data.pickup_lon}}%2C{{user_query_data.lat}}&z=11.2
+            box.innerHTML += `<p class="message ${messageClass}">
+              <strong>${m.from}:</strong> ${m.text}
+              ${pickupMapLink}
+              <span class="timestamp">${m.timestamp.split(" ")[1]}</span><br>
+              <button class="user-query-reply" id="decline">Decline</button>
+              <button class="user-query-reply" id="approve">Approve</button>
+            </p>`;
+          
+            
+            document.getElementById("approve").addEventListener('click', function(e){
+              e.preventDefault();
+              SendMessage(1, "approve");
+            })
 
-            box.innerHTML = '';  // Очищаем чат
-            data.messages.forEach(m => {
-              // Если сообщение от текущего пользователя, добавляем класс .from-user, если от собеседника - .to-user
-              let messageClass = m.from === '{{ request.user.username }}' ? 'from-user' : 'to-user';
-              if (m.notify_type == null) {
-                box.innerHTML += `<p class="message ${messageClass}"><strong>${m.from}:</strong> ${m.text} <span class="timestamp">${m.timestamp.split(" ")[1]}</span></p>`;
-              } else if (m.notify_type == 'user_query') {
-                pickupMapLink = `<br><small><a href="https://yandex.ru/maps/?rtext={{user_query_data.lon}}%2C{{user_query_data.lat}}&z=11.2" target="_blank">📍 Посмотреть на карте: {{user_query_data.point}}</a></small>`;
-                https://yandex.ru/maps/?ll=-14.002575%2C49.972191&mode=search&pt=%2C53.202742353507254&sll={{user_query_data.pickup_lon}}%2C{{user_query_data.pickup_lat}}&text={{user_query_data.pickup_lon}}%2C{{user_query_data.lat}}&z=11.2
-                box.innerHTML += `<p class="message ${messageClass}">
-                  <strong>${m.from}:</strong> ${m.text}
-                  ${pickupMapLink}
-                  <span class="timestamp">${m.timestamp.split(" ")[1]}</span><br>
-                  <button class="user-query-reply" id="decline">Decline</button>
-                  <button class="user-query-reply" id="approve">Approve</button>
-                </p>`;
-              
-                
-                document.getElementById("approve").addEventListener('click', function(e){
-                  e.preventDefault();
-                  SendMessage(1, "approve");
-                })
-
-                document.getElementById("decline").addEventListener('click', function(e){
-                  e.preventDefault();
-                  SendMessage(1, "decline");
-                })
-              }
-            });
-            box.scrollTop = box.scrollHeight; // Прокручиваем чат до конца
-          });
-
-        box.scrollTop = lastScrollTop;
-
-      }
-
-    setInterval(loadMessages, 3000); // обновление сообщений каждую 3 секунды
-    loadMessages();
-  
-    document.getElementById('message-form').addEventListener('submit', function(e) {
-      e.preventDefault();
-      SendMessage(0, this.id);
-    });
-
-    function SendMessage(notify, id){
-
-      let formData = new FormData();
-
-      formData.append("to_user_id", document.getElementById('to_user_id').value);
-      formData.append("marker_id", document.getElementById('marker_id').value);
-
-      if (!notify) {
-        msg = document.getElementById('message-text').value;
-      } else {
-        if (id == 'decline'){
-          msg = "К сожалению пользователь {{request.user}} отказал Вам в поездке :(";
-        } else {
-          msg = "Пользователь {{request.user}} подтвердил Ваш запрос на поездку!";
-        }
-      }
-      formData.append('notify_type', id);
-      formData.append("text", msg);
-  
-      fetch("{% url 'send_message' %}", {
-        method: 'POST',
-        headers: {'X-CSRFToken': '{{ csrf_token }}'},
-        body: formData
-      }).then(() => {
-        document.getElementById('message-text').value = ''; // очищаем поле ввода
-        loadMessages(); // перезагружаем чат
+            document.getElementById("decline").addEventListener('click', function(e){
+              e.preventDefault();
+              SendMessage(1, "decline");
+            })
+          } else {
+            box.innerHTML += `<p class="message ${messageClass}"><strong>${m.from}:</strong> ${m.text} <span class="timestamp">${m.timestamp.split(" ")[1]}</span></p>`;
+          }
+        });
+        box.scrollTop = box.scrollHeight; // Прокручиваем чат до конца
       });
+
+    box.scrollTop = lastScrollTop;
+
+  }
+
+setInterval(loadMessages, 3000); // обновление сообщений каждую 3 секунды
+loadMessages();
+
+document.getElementById('message-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  SendMessage(0, this.id);
+});
+
+function SendMessage(notify, id){
+
+  let formData = new FormData();
+
+  formData.append("to_user_id", document.getElementById('to_user_id').value);
+  formData.append("marker_id", document.getElementById('marker_id').value);
+
+  if (!notify) {
+    msg = document.getElementById('message-text').value;
+  } else {
+    if (id == 'decline'){
+      msg = "К сожалению пользователь {{request.user}} отказал Вам в поездке :(";
+    } else {
+      msg = "Пользователь {{request.user}} подтвердил Ваш запрос на поездку!";
     }
-  </script>
-  
+  }
+  formData.append('notify_type', id);
+  formData.append("text", msg);
+
+  fetch("{% url 'send_message' %}", {
+    method: 'POST',
+    headers: {'X-CSRFToken': '{{ csrf_token }}'},
+    body: formData
+  }).then(() => {
+    document.getElementById('message-text').value = ''; // очищаем поле ввода
+    loadMessages(); // перезагружаем чат
+  });
+}
+
+</script>
+
+{% endblock %} 

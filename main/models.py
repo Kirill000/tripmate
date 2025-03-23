@@ -12,6 +12,7 @@ class Profile(models.Model):
     vk = models.CharField(max_length=100, blank=True)
     successful_trips = models.IntegerField(default=0)
     unsuccessful_trips = models.IntegerField(default=0)
+    trips = models.JSONField(blank=False, null=False, default=dict)
 
     def __str__(self):
         return self.user.username

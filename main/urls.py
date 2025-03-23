@@ -15,6 +15,10 @@ urlpatterns = [
 
     # Страница со списком всех диалогов
     path('dialogs/', views.dialog_list, name='dialog_list'),
+    path('check-new-messages/', views.check_new_messages, name='check_new_messages'),
+    path('marker/<int:marker_id>/delete/', views.delete_marker, name='delete_marker'),
+    path('marker/<int:marker_id>/cancel/', views.cancel_participation, name='cancel_participation'),
+    path('marker/<int:marker_id>/edit/', views.edit_marker, name='edit_marker'),
 
     # AJAX — получение количества непрочитанных сообщений (для уведомлений)
     # path('get-unread-count/', views.get_unread_count, name='get_unread_count'),

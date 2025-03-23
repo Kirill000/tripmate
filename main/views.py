@@ -9,6 +9,8 @@ from .forms import UserForm, ProfileForm
 from .models import Profile, Marker, Message
 from django.contrib.auth.models import User
 import json
+from datetime import timedelta, datetime
+from django.contrib import messages
 
 def register(request):
     if request.method == 'POST':
@@ -16,6 +18,7 @@ def register(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
+            Profile.objects.get_or_create(user=user)
             return redirect('map')
     else:
         form = UserCreationForm()
@@ -52,6 +55,7 @@ def dialog_list(request):
 
 @login_required
 def get_messages(request, marker_id, to_user_id):
+
     messages = Message.objects.filter(
         marker_id=marker_id,
         from_user__in=[request.user.id, to_user_id],
@@ -75,28 +79,33 @@ def send_message(request):
 
         text = request.POST['text']
 
-        if "notify_type" in request.POST:
-            if request.POST['notify_type'] == 'user_query':
-                notification_type = request.POST['notify_type']
-                if str(request.user.id) in marker.users:
-                    return JsonResponse({'status': 'You cannot send query twice'})                
+        if request.POST['notify_type'] == 'user_query':
+                        
+            notification_type = request.POST['notify_type']             
+            marker = Marker.objects.filter(id=request.POST['marker_id'])[0]
+            
+            profile = Profile.objects.get(user=request.user)
+            profile.trips[marker.id] = marker.title
+            profile.save()
+            
+            if str(request.user.id) in marker.users.keys():
+                return JsonResponse({'status': 'You cannot send query twice'})   
+            marker.users[str(request.user.id)] = {"is_approved": None, "lat": request.POST['pickup_lat'], "lon": request.POST['pickup_lon'], 'point': request.POST['pickup_point']}
+            marker.save()
+            text = f"Пользователь отправил Вам запрос на совместную поездку {marker.title}"
+        elif request.POST['notify_type'] == 'approve' or request.POST['notify_type'] == 'decline':
+            notification_type = request.POST['notify_type']
+            Message.objects.filter(notification_type='user_query').delete()
+            if request.POST['notify_type'] == 'approve':
                 marker = Marker.objects.filter(id=request.POST['marker_id'])[0]
-                marker.users[str(request.user.id)] = {"is_approved": False, "lat": request.POST['pickup_lat'], "lon": request.POST['pickup_lon'], 'point': request.POST['pickup_point']}
+                
+                marker.users[request.POST['to_user_id']]['is_approved'] = True                    
+                if int(marker.people_count)-1 == 0:
+                    marker.is_active = False
+                marker.people_count = (marker.people_count-1)
                 marker.save()
-                text = f"Пользователь отправил Вам запрос на совместную поездку {marker.title}"
-            elif request.POST['notify_type'] == 'approve' or request.POST['notify_type'] == 'decline':
-                notification_type = request.POST['notify_type']
-                Message.objects.filter(notification_type='user_query').delete()
-                if request.POST['notify_type'] == 'approve':
-                    marker = Marker.objects.filter(id=request.POST['marker_id'])[0]
-                    
-                    marker.users[request.POST['to_user_id']]['is_approved'] = True                    
-                    if int(marker.people_count)-1 == 0:
-                        marker.is_active = False
-                    marker.people_count = (marker.people_count-1)
-                    marker.save()
         else:
-            notification_type = None
+            notification_type = ""
             
         to_user_id = request.POST['to_user_id']
         marker_id = request.POST['marker_id']
@@ -109,20 +118,33 @@ def send_message(request):
                 marker_id=marker_id,
                 text=text
             )
+            print('saved')
             return JsonResponse({'status': 'ok'})
     return JsonResponse({'status': 'error'})
 
+from django.utils import timezone
+
+@login_required
+def check_new_messages(request):
+    new_messages_raw = Message.objects.filter(to_user=request.user)
+    new_messages = {}
+    for msg in new_messages_raw:
+        if msg.is_read == False:
+            new_messages[msg.from_user.username] = msg.text
+            
+    return JsonResponse({'new_messages': new_messages})
+
 @login_required(login_url='login')
 def map_view(request):
+    # Проверка на просроченные метки
+    now = timezone.now()
+    Marker.objects.filter(is_active=True, active_to__lt=now).update(is_active=False)
+
+    # Вывод только актуальных меток
     markers = Marker.objects.filter(is_active=True)
     
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[-1].strip()
-    else:
-        ip = request.META.get('REMOTE_ADDR')
-    print(markers)
     return render(request, 'main/map.html', {'markers': markers})
+
 
 @login_required(login_url='login')
 def add_marker(request):
@@ -140,23 +162,192 @@ def add_marker(request):
         form = MarkerForm()
     return render(request, 'main/add_marker.html', {'form': form})
 
+from .models import Marker, Profile, UserStatus
+
 @login_required(login_url='login')
 def profile(request, user_id):
     user = request.user
     profile, created = Profile.objects.get_or_create(user=user)
+
+    own_markers = Marker.objects.filter(user=user)
+    responded_markers = []
+
+    trips_raw = profile.trips.copy()
+    for trip_id in list(trips_raw.keys()):
+        try:
+            marker = Marker.objects.get(id=int(trip_id))
+            if marker.active_to - timezone.now() < timedelta(days=2):
+                marker.delete()
+            else:
+                responded_markers.append(marker)
+        except Marker.DoesNotExist:
+            del trips_raw[trip_id]
+
+    profile.trips = trips_raw
+    profile.save()
+
+    user_status, _ = UserStatus.objects.get_or_create(user=user)
+    is_online = user_status.is_online()
+
     if request.method == 'POST':
+        if 'cancel_trip_id' in request.POST:
+            
+            # Увеличить количество пассажиров
+            marker.people_count += 1
+
+            # Удалить пользователя из списка
+            del marker.users[str(request.user.id)]
+            marker.save()
+
+            # Уведомить создателя
+            Message.objects.create(
+                from_user=request.user,
+                to_user=marker.user,
+                marker=marker,
+                text=f"Пользователь {request.user.username} отказался от поездки '{marker.title}'.",
+                notification_type='user_left'
+            )
+
+            # Удалить поездку из профиля пользователя
+            profile = get_object_or_404(Profile, user=request.user)
+            if str(marker.id) in profile.trips:
+                del profile.trips[str(marker.id)]
+                profile.save()
+                
+            return redirect('profile', user_id=user.id)
+
         user_form = UserForm(request.POST, instance=user)
         profile_form = ProfileForm(request.POST, instance=profile)
         if user_form.is_valid() and profile_form.is_valid():
             user_form.save()
             profile_form.save()
-            return redirect('profile')
+            
+            profile.first_name = request.POST['first_name']
+            profile.last_name = request.POST['last_name']
+            profile.save()
+            
+            return redirect('profile', user_id=user.id)
     else:
         user_form = UserForm(instance=user)
         profile_form = ProfileForm(instance=profile)
+
     return render(request, 'main/profile.html', {
         'user_form': user_form,
         'profile_form': profile_form,
+        'own_markers': own_markers,
+        'responded_markers': responded_markers,
+        'profile_data': profile,
+        'is_online': is_online,
+    })
+
+@login_required
+def delete_marker(request, marker_id):
+    marker = get_object_or_404(Marker, id=marker_id)
+
+    if request.user == marker.user:
+        # Уведомить всех участников
+        for user_id in marker.users.keys():
+            Message.objects.create(
+                from_user=request.user,
+                to_user_id=int(user_id),
+                marker=marker,
+                text=f"Метка '{marker.title}' была удалена её создателем.",
+                notification_type='marker_deleted'
+            )
+        marker.is_active - False
+        marker.save()
+    return redirect('profile', user_id=request.user.id)
+
+@login_required
+def cancel_participation(request, marker_id):
+    marker = get_object_or_404(Marker, id=marker_id)
+
+    if str(request.user.id) in marker.users:
+        # Увеличить количество пассажиров
+        marker.people_count += 1
+
+        # Удалить пользователя из списка
+        del marker.users[str(request.user.id)]
+        marker.save()
+
+        # Уведомить создателя
+        Message.objects.create(
+            from_user=request.user,
+            to_user=marker.user,
+            marker=marker,
+            text=f"Пользователь {request.user.username} отказался от поездки '{marker.title}'.",
+            notification_type='user_left'
+        )
+
+        # Удалить поездку из профиля пользователя
+        profile = get_object_or_404(Profile, user=request.user)
+        if str(marker.id) in profile.trips:
+            del profile.trips[str(marker.id)]
+            profile.save()
+
+    return redirect('profile', user_id=request.user.id)
+
+@login_required
+def edit_marker(request, marker_id):
+    marker = get_object_or_404(Marker, id=marker_id)
+
+    if marker.user != request.user:
+        return redirect('map')  # Только автор может редактировать
+
+    if request.method == 'POST':
+        # Исключение пользователя
+        if 'exclude_user_id' in request.POST:
+            excluded_user_id = request.POST.get('exclude_user_id')
+            if excluded_user_id in marker.users:
+                # Отправить уведомление исключённому пользователю
+                excluded_user = User.objects.get(id=excluded_user_id)
+                Message.objects.create(
+                    from_user=request.user,
+                    to_user=excluded_user,
+                    marker=marker,
+                    notification_type='excluded',
+                    text=f"Вы были исключены из поездки: {marker.title}"
+                )
+
+                # Удалить метку из trips исключённого
+                try:
+                    profile = Profile.objects.get(user=excluded_user)
+                    if str(marker.id) in profile.trips:
+                        del profile.trips[str(marker.id)]
+                        profile.save()
+                except Profile.DoesNotExist:
+                    pass
+
+                # Удалить из списка
+                del marker.users[excluded_user_id]
+                marker.save()
+                messages.success(request, "Пользователь исключён.")
+                return redirect('edit_marker', marker_id=marker.id)
+
+        else:
+            form = MarkerForm(request.POST, request.FILES, instance=marker)
+            if form.is_valid():
+                form.save()
+
+                # Рассылка всем участникам об изменениях
+                for uid in marker.users.keys():
+                    if uid != str(request.user.id):
+                        Message.objects.create(
+                            from_user=request.user,
+                            to_user_id=uid,
+                            marker=marker,
+                            notification_type='marker_updated',
+                            text=f"Информация о поездке '{marker.title}' была обновлена. Подробнее на странице твоего профиля."
+                        )
+
+                messages.success(request, "Метка обновлена.")
+                return redirect('profile', user_id=request.user.id)
+    else:
+        form = MarkerForm(instance=marker)
+
+    return render(request, 'main/edit_marker.html', {
+        'form': form,
+        'marker': marker
     })
 
 @login_required(login_url='login')

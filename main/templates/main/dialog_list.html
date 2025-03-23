@@ -1,121 +1,41 @@
-<style>
-    body {
-      background-color: #f5f7fa;
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-  
-    .dialog-container {
-      max-width: 800px;
-      margin: 40px auto;
-      padding: 20px;
-    }
-  
-    .dialog-card {
-      background-color: #ffffff;
-      border-radius: 16px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      padding: 30px;
-    }
-  
-    .dialog-title {
-      font-size: 24px;
-      font-weight: 600;
-      margin-bottom: 25px;
-      border-bottom: 1px solid #e0e0e0;
-      padding-bottom: 10px;
-      color: #2c3e50;
-    }
-  
-    .dialog-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-  
-    .dialog-item {
-      background-color: #f1f3f6;
-      border-radius: 12px;
-      margin-bottom: 15px;
-      transition: all 0.2s ease;
-    }
-  
-    .dialog-item:hover {
-      background-color: #e9edf2;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    }
-  
-    .dialog-link {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      text-decoration: none;
-      padding: 20px;
-      color: #333;
-    }
-  
-    .dialog-user {
-      font-size: 18px;
-      font-weight: 500;
-    }
+{% extends "main/base.html" %}
+{% load static %}
 
-    .dialog-route {
-        font-size: 13px;
-        color: #777;
-        max-width: 250px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        transition: all 0.3s ease;
-        cursor: pointer;
-    }
-    
-    .dialog-route.expanded {
-        white-space: normal;
-        overflow: visible;
-    }
-  
-    .dialog-button {
-      font-size: 14px;
-      font-weight: 600;
-      color: #4c70ff;
-    }
-  
-    .dialog-button:hover {
-      text-decoration: underline;
-    }
-  
-    .dialog-empty {
-      text-align: center;
-      font-size: 16px;
-      color: #999;
-      padding: 20px 0;
-    }
-  </style>
-  
+{% block extra_css %}
+<link href="{% static "css/dialogs.css" %}" rel="stylesheet" /> 
+{% endblock %}
 
-  <div class="dialog-container">
-    <div class="dialog-card">
-      <h2 class="dialog-title">Ваши диалоги</h2>
-  
-      {% if dialogs %}
-        <ul class="dialog-list">
-          {% for dialog in dialogs %}
-            <li class="dialog-item">
-              <a href="{% url 'chat_page' dialog.marker.id dialog.from_user.id %}" class="dialog-link">
-                <div class="dialog-user">{{ dialog.from_user.username }}</div>
-                <div class="dialog-route" title="{{ dialog.marker.start_point }} → {{ dialog.marker.end_point }}">
-                  {{ dialog.marker.start_point }} → {{ dialog.marker.end_point }}
-                </div>
-                <div class="dialog-button">Открыть чат →</div>
-              </a>
-            </li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <div class="dialog-empty">Нет активных диалогов.</div>
-      {% endif %}
-    </div>
+{% block content %}
+<div class="dialog-container">
+  <div class="dialog-card">
+    <h2 class="dialog-title">Ваши диалоги</h2>
+
+    {% if dialogs %}
+      <ul class="dialog-list">
+        {% for dialog in dialogs %}
+          <li class="dialog-item">
+            <a href="{% url 'chat_page' dialog.marker.id dialog.from_user.id %}" class="dialog-link">
+              <div class="dialog-user">{{ dialog.from_user.username }}</div>
+              <div class="dialog-route" title="{{ dialog.marker.start_point }} → {{ dialog.marker.end_point }}">
+                {{ dialog.marker.start_point }} → {{ dialog.marker.end_point }}
+              </div>
+              <div class="dialog-button">Открыть чат →</div>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="dialog-empty">Нет активных диалогов.</div>
+    {% endif %}
   </div>
+</div>
+{% endblock %}
+
+{% comment %} 
+{% block extra_js %}
+
+
+{% endblock %} 
+{% endcomment %}
+
   
