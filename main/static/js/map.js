@@ -1,6 +1,15 @@
 let map = L.map('map', {
-maxZoom: 18,
-minZoom: 3
+    maxZoom: 16,
+    worldCopyJump: false // Отключаем дублирование карты
+});
+
+var southWest = L.latLng(-180, -180),
+northEast = L.latLng(180, 180);
+var bounds = L.latLngBounds(southWest, northEast);
+
+map.setMaxBounds(bounds);
+map.on('drag', function() {
+	map.panInsideBounds(bounds, { animate: false });
 });
 
 navigator.geolocation.getCurrentPosition(function(pos) {
@@ -33,12 +42,14 @@ document.getElementById("other_transport_group").style.display = (type === "othe
 function setStartFromMap() {
 selectingStart = true;
 selectingEnd = false;
+document.getElementById('markerForm').style.display = 'none';
 alert("Выберите стартовую точку на карте");
 }
 
 function setEndFromMap() {
 selectingStart = false;
 selectingEnd = true;
+document.getElementById('markerForm').style.display = 'none';
 alert("Выберите конечную точку на карте");
 }
 
@@ -84,6 +95,7 @@ if (selectingStart) {
     document.getElementById('start_lon').value = lng;
     });
     selectingStart = false;
+    document.getElementById('markerForm').style.display = 'flex';
     return;
 }
 
@@ -96,11 +108,15 @@ if (selectingEnd) {
     document.getElementById('end_lon').value = lng;
     });
     selectingEnd = false;
+    document.getElementById('markerForm').style.display = 'flex';
     return;
 }
 
 // Иначе — просто клик по карте: показать popup "Добавить здесь"
-if (tempPopup) map.closePopup(tempPopup);
+if (tempPopup) {
+    map.closePopup(tempPopup)
+    toggleForm(show=false)
+};
 
 reverseGeocode(lat, lng, function(address) {
     let popupContent = `
@@ -123,7 +139,9 @@ startMarker = L.marker([lat, lng], { draggable: true }).addTo(map);
 document.getElementById('start_point').value = address;
 document.getElementById('start_lat').value = lat;
 document.getElementById('start_lon').value = lng;
+setDefaultTime();
 toggleForm(true);
+
 if (tempPopup) map.closePopup(tempPopup);
 }
 
@@ -137,7 +155,26 @@ let waitingPickup = false;
 let currentMarkerId = null;
 let routeLine = null;
 
+// Функция для установки текущего времени в формате datetime-local
+function setDefaultTime() {
+    const now = new Date();
+    // Получаем текущую дату и время
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0'); // Месяц начинается с 0
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+
+    // Форматируем строку в нужный формат (yyyy-mm-ddThh:mm)
+    const currentTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+    
+    // Устанавливаем текущее время в input
+    document.getElementById('active_from').value = currentTime;
+}
+
 function showDetails(data) {
+
+
 let content = `
     <h3 style="margin-top: 0;">Детали маршрута</h3>
     <strong>Старт:</strong> ${data.start_point}<br>

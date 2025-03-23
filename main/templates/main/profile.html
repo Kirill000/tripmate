@@ -6,42 +6,115 @@
 {% endblock %}
 
 {% block content %}
-<div class="profile-container">
 
-     <!-- Скрытая форма редактирования -->
-     <div id="profile-form-container" style="display: none; margin-top: 20px;">
-        <form method="post">
-            {% csrf_token %}
-            {{ user_form.as_p }}
-            {{ profile_form.as_p }}
+{% if is_owner %}
+<div id="profile-form-container" style="display: none; margin-top: 20px;">
+    <form method="post" enctype="multipart/form-data" class="edit-profile-form">
+        {% csrf_token %}
+
+        <!-- Блок формы пользователя -->
+        <div class="form-group">
+            <label for="{{ user_form.username.id_for_label }}">Логин (username):</label>
+            {{ user_form.username }}
+        </div>
+        <div class="form-group">
+            <label for="{{ user_form.email.id_for_label }}">Email:</label>
+            {{ user_form.email }}
+        </div>
+        <div class="form-group">
+            <label for="id_first_name">Имя:</label>
+            <input type="text" name="first_name" id="id_first_name" value="{{ profile_data.first_name }}" class="form-control" />
+        </div>
+        <div class="form-group">
+            <label for="id_last_name">Фамилия:</label>
+            <input type="text" name="last_name" id="id_last_name" value="{{ profile_data.last_name }}" class="form-control" />
+        </div>
+
+        <!-- Блок формы профиля -->
+        <div class="form-group">
+            <label for="{{ profile_form.phone_number.id_for_label }}">Телефон:</label>
+            {{ profile_form.phone_number }}
+        </div>
+        <div class="form-group">
+            <label for="{{ profile_form.telegram.id_for_label }}">Telegram:</label>
+            {{ profile_form.telegram }}
+        </div>
+        <div class="form-group">
+            <label for="{{ profile_form.whatsapp.id_for_label }}">WhatsApp:</label>
+            {{ profile_form.whatsapp }}
+        </div>
+        <div class="form-group">
+            <label for="{{ profile_form.vk.id_for_label }}">VK:</label>
+            {{ profile_form.vk }}
+        </div>
+
+        <!-- Фото отдельно -->
+        <div class="photo-container">
+            <label for="id_photo">Фото профиля:</label>
+            <div class="photo-preview">
+                <img src="{% static profile_data.photo.url %}" id="photo-preview" alt="Фото профиля" class="round-photo" />
+            </div>
+            <input type="file" name="photo" id="id_photo" accept="image/*" onchange="previewImage(event)">
+        </div>
+
+        <div class="form-buttons">
             <button type="submit" class="save-button">Сохранить</button>
-            <button class="edit-button" onclick="toggleProfileForm()">Закрыть</button>
-        </form>
+            <button type="button" class="edit-button" onclick="toggleProfileForm()">Закрыть</button>
+        </div>
+    </form>
+</div>
+{% endif %}
+
+<div id="profile-info" class="profile-info">
+    {% if profile_data.photo %}
+    <div class="profile-photo-top">
+        <img src="{% static profile_data.photo.url %}" alt="Фото пользователя" class="square-photo">
     </div>
+    {% endif %}
 
-    <div class="profile-info">
-        <h2>Информация о пользователе</h2>
-        <ul>
-            <li><strong>Имя:</strong> {{ profile_data.first_name }}</li>
-            <li><strong>Фамилия:</strong> {{ profile_data.last_name }}</li>
-            <li><strong>Телефон:</strong> {{ profile_data.phone_number }}</li>
-            <li><strong>Telegram:</strong> {{ profile_data.telegram }}</li>
-            <li><strong>WhatsApp:</strong> {{ profile_data.whatsapp }}</li>
-            <li><strong>VK:</strong> {{ profile_data.vk }}</li>
-            <li><strong>Успешных поездок:</strong> {{ profile_data.successful_trips }}</li>
-            <li><strong>Неуспешных поездок:</strong> {{ profile_data.unsuccessful_trips }}</li>
-            <li><strong>Статус:</strong>
-                {% if is_online %}
-                    <span class="status online">Онлайн</span>
-                {% else %}
-                    <span class="status offline">Оффлайн</span>
-                {% endif %}
-            </li>
-        </ul>
+    {% if profile_data.first_name or profile_data.last_name %}
+    <h2>{{ profile_data.first_name }} {{ profile_data.last_name }} 
+        {% if is_online %}
+            <span class="status online">Онлайн</span>
+        {% else %}
+            <span class="status offline">Оффлайн</span>
+        {% endif %}
+    </h2>
+    {% endif %}
 
+    <ul>
+        {% if profile_data.phone_number %}
+        <li><strong>Телефон:</strong> {{ profile_data.phone_number }}</li>
+        {% endif %}
+
+        {% if profile_data.telegram %}
+        <li><strong>Telegram:</strong> {{ profile_data.telegram }}</li>
+        {% endif %}
+
+        {% if profile_data.whatsapp %}
+        <li><strong>WhatsApp:</strong> {{ profile_data.whatsapp }}</li>
+        {% endif %}
+
+        {% if profile_data.vk %}
+        <li><strong>VK:</strong> {{ profile_data.vk }}</li>
+        {% endif %}
+
+        {% if profile_data.successful_trips %}
+        <li><strong>Успешных поездок:</strong> {{ profile_data.successful_trips }}</li>
+        {% endif %}
+
+        {% if profile_data.unsuccessful_trips %}
+        <li><strong>Неуспешных поездок:</strong> {{ profile_data.unsuccessful_trips }}</li>
+        {% endif %}
+    </ul>
+
+    {% if is_owner %}
         <button class="edit-button" onclick="toggleProfileForm()">Редактировать профиль</button>
-    </div>    
+    {% endif %}
+</div>
 
+
+{% if is_owner %}
     <div class="markers-section">
         <h2>Мои маркеры</h2>
         <div class="marker-list">
@@ -86,18 +159,33 @@
             {% endfor %}
         </div>
     </div>
+{% endif %}
 
-    <div class="nav-buttons">
-        <a href="{% url 'map' %}" class="btn-back">Назад к карте</a>
-        <a href="{% url 'logout' %}" class="btn-logout">Выйти</a>
-    </div>
-</div>
 <script>
     function toggleProfileForm() {
-        const formBlock = document.getElementById("profile-form-container");
-        const profile_info = document.getElementById("profile-info")
-        formBlock.style.display = (formBlock.style.display === "none") ? "block" : "none";
-        profile_info.style.display = (formBlock.style.display === "none") ? "none" : "block";
+        //try {
+            const formBlock = document.getElementById("profile-form-container");
+            const profile_info = document.getElementById("profile-info");
+            console.log(formBlock, profile_info)
+            profile_info.style.display = (formBlock.style.display === "none") ? "none" : "block";
+            console.log((formBlock.style.display === "none") ? "block" : "none");
+            formBlock.style.display = (formBlock.style.display === "none") ? "block" : "none";
+        //} catch {
+        //    return null
+        //}
     }
+
+    function previewImage(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function() {
+                const preview = document.getElementById('photo-preview');
+                preview.src = reader.result;
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+
 </script>
 {% endblock %}

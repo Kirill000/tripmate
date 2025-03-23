@@ -11,6 +11,7 @@ from django.contrib.auth.models import User
 import json
 from datetime import timedelta, datetime
 from django.contrib import messages
+import os
 
 def register(request):
     if request.method == 'POST':
@@ -151,32 +152,48 @@ def add_marker(request):
     if request.method == 'POST':
         print(request.POST)
         form = MarkerForm(request.POST, request.FILES)
+        user = Profile.objects.get(id=request.user.id)
         if form.is_valid():
             marker = form.save(commit=False)
             marker.user = request.user
+            
+            if marker.telegram == None:
+                marker.telegram = user.telegram
+            if marker.vk == None:
+                marker.vk == user.vk
+            if marker.phone_number == None:
+                marker.phone_number = user.phone_number
+            if marker.whatsapp == None:
+                marker.whatsapp = user.whatsapp
+                
             marker.save()
             return redirect('map')
         else:
             print(form.errors)
     else:
         form = MarkerForm()
+
     return render(request, 'main/add_marker.html', {'form': form})
 
 from .models import Marker, Profile, UserStatus
 
 @login_required(login_url='login')
 def profile(request, user_id):
-    user = request.user
-    profile, created = Profile.objects.get_or_create(user=user)
+    viewed_user = get_object_or_404(User, id=user_id)
+    is_owner = request.user == viewed_user
+    print(request.user == viewed_user)
 
-    own_markers = Marker.objects.filter(user=user)
+    profile, _ = Profile.objects.get_or_create(user=viewed_user)
+
+    own_markers = Marker.objects.filter(user=viewed_user)
     responded_markers = []
 
+    # Удаляем устаревшие поездки
     trips_raw = profile.trips.copy()
     for trip_id in list(trips_raw.keys()):
         try:
             marker = Marker.objects.get(id=int(trip_id))
-            if marker.active_to - timezone.now() < timedelta(days=2):
+            if marker.active_to - timezone.now() >= timedelta(days=2):
                 marker.delete()
             else:
                 responded_markers.append(marker)
@@ -186,49 +203,53 @@ def profile(request, user_id):
     profile.trips = trips_raw
     profile.save()
 
-    user_status, _ = UserStatus.objects.get_or_create(user=user)
+    user_status, _ = UserStatus.objects.get_or_create(user=viewed_user)
     is_online = user_status.is_online()
 
-    if request.method == 'POST':
+    if request.method == 'POST' and is_owner:
         if 'cancel_trip_id' in request.POST:
-            
-            # Увеличить количество пассажиров
+            marker_id = request.POST.get('cancel_trip_id')
+            marker = get_object_or_404(Marker, id=marker_id)
+
+            # Увеличиваем количество пассажиров
             marker.people_count += 1
 
-            # Удалить пользователя из списка
-            del marker.users[str(request.user.id)]
-            marker.save()
+            # Удаляем пользователя из списка
+            if str(request.user.id) in marker.users:
+                del marker.users[str(request.user.id)]
+                marker.save()
 
-            # Уведомить создателя
-            Message.objects.create(
-                from_user=request.user,
-                to_user=marker.user,
-                marker=marker,
-                text=f"Пользователь {request.user.username} отказался от поездки '{marker.title}'.",
-                notification_type='user_left'
-            )
+                # Уведомляем создателя маршрута
+                Message.objects.create(
+                    from_user=request.user,
+                    to_user=marker.user,
+                    marker=marker,
+                    text=f"Пользователь {request.user.username} отказался от поездки '{marker.title}'.",
+                    notification_type='user_left'
+                )
 
-            # Удалить поездку из профиля пользователя
-            profile = get_object_or_404(Profile, user=request.user)
-            if str(marker.id) in profile.trips:
-                del profile.trips[str(marker.id)]
-                profile.save()
-                
-            return redirect('profile', user_id=user.id)
+                # Удаляем поездку из профиля
+                if str(marker.id) in profile.trips:
+                    del profile.trips[str(marker.id)]
+                    profile.save()
 
-        user_form = UserForm(request.POST, instance=user)
-        profile_form = ProfileForm(request.POST, instance=profile)
+            return redirect('profile', user_id=user_id)
+
+        user_form = UserForm(request.POST, instance=viewed_user)
+        profile_form = ProfileForm(request.POST, request.FILES, instance=profile)
+        print(request.FILES)
         if user_form.is_valid() and profile_form.is_valid():
             user_form.save()
             profile_form.save()
             
             profile.first_name = request.POST['first_name']
             profile.last_name = request.POST['last_name']
-            profile.save()
+            profile.photo = profile.photo.url[12:]
             
-            return redirect('profile', user_id=user.id)
+            profile.save()
+            return redirect('profile', user_id=user_id)
     else:
-        user_form = UserForm(instance=user)
+        user_form = UserForm(instance=viewed_user)
         profile_form = ProfileForm(instance=profile)
 
     return render(request, 'main/profile.html', {
@@ -238,6 +259,7 @@ def profile(request, user_id):
         'responded_markers': responded_markers,
         'profile_data': profile,
         'is_online': is_online,
+        'is_owner': is_owner,
     })
 
 @login_required

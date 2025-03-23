@@ -3,7 +3,9 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 
 class Profile(models.Model):
+    photo = models.ImageField(upload_to='main/static/profile_photos/', default="profile_photos/default_profile.jpg")
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+    status = models.CharField(max_length=200, blank=True, null=True)
     first_name = models.CharField(max_length=100, blank=True)
     last_name = models.CharField(max_length=100, blank=True)
     phone_number = models.CharField(max_length=20, blank=True)

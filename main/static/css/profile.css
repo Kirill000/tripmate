@@ -1,45 +1,189 @@
-.profile-container {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 30px;
-    background-color: #f9f9f9;
-    border-radius: 20px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+/* Общий контейнер */
+main {
+    display: flex;
+    justify-content: center;  /* по горизонтали */
+    column-gap: 20px;
+    padding: 10px;
 }
 
-.profile-title {
-    font-size: 32px;
+/* Заголовки */
+.profile-title,
+.markers-section h2,
+.profile-info h2 {
+    font-size: 28px;
     font-weight: bold;
     margin-bottom: 20px;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 8px;
     text-align: center;
 }
 
-.profile-form {
-    margin-bottom: 40px;
+/* Профиль: информация */
+.profile-info {
+    flex: 1;
     background-color: #fff;
-    padding: 20px;
+    padding: 25px;
     border-radius: 16px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    margin-top: 50px;
+    margin-bottom: 40px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    max-width: 700px;
+    min-width: 300px;
 }
 
-.btn-save {
-    padding: 10px 20px;
+.edit-button {
+    margin-top: 10px;
+}
+
+@media (max-width: 768px) {
+    main {
+      flex-direction: column;
+    }
+    .edit-button {
+        position: relative;
+        left: 0px;
+    }
+  }
+
+.profile-info ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.profile-info li {
+    padding: 8px 0;
+    font-size: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px dashed #eee;
+}
+
+.profile-info li strong {
+    flex: 0 0 150px;
+    color: #333;
+}
+
+/* Статусы */
+.status {
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.status.online {
     background-color: #4caf50;
-    color: #fff;
-    border: none;
+    color: white;
+}
+
+.status.offline {
+    background-color: #ccc;
+    color: #333;
+}
+
+/* Форма редактирования */
+.edit-profile-form {
+    margin: 0 auto;
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    font-size: 15px;
+    color: #333;
+}
+
+.form-control,
+.edit-profile-form input[type="text"],
+.edit-profile-form input[type="email"],
+.edit-profile-form input[type="tel"],
+.edit-profile-form input[type="url"] {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
     border-radius: 10px;
+    font-size: 16px;
+    background: #f9f9f9;
+    transition: border 0.2s ease;
+}
+
+.form-control:focus {
+    border-color: #4c70ff;
+    outline: none;
+}
+
+.form-buttons {
+    margin-top: 25px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+/* Кнопки */
+.save-button,
+.edit-button,
+.btn-cancel,
+.btn-back,
+.btn-logout {
+    padding: 10px 20px;
+    background-color: #4c70ff;
+    color: white;
+    border: none;
+    border-radius: 12px;
     cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+    text-decoration: none;
+    text-align: center;
+    display: inline-block;
 }
 
-.btn-save:hover {
-    background-color: #45a049;
+.save-button:hover,
+.edit-button:hover,
+.btn-back:hover,
+.btn-logout:hover {
+    background-color: #3a59cc;
 }
 
-.markers-section h2 {
+.btn-cancel {
+    background-color: #ff5252;
+}
+
+.btn-cancel:hover {
+    background-color: #e04343;
+}
+
+.btn-cancel:disabled {
+    background-color: #aaa;
+    cursor: not-allowed;
+}
+
+/* Навигация */
+.nav-buttons {
+    display: flex;
+    justify-content: space-between;
     margin-top: 40px;
-    font-size: 24px;
-    border-bottom: 2px solid #ccc;
-    padding-bottom: 5px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* Карточки маркеров */
+.markers-section {
+    margin-top: 40px;
+    margin-left: 10px;
+    margin-right: 10px;
+    max-width: 700px;
 }
 
 .marker-list {
@@ -52,135 +196,94 @@
     background-color: #ffffff;
     padding: 20px;
     border-radius: 16px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
 .marker-card h3 {
-    margin-top: 0;
-    margin-bottom: 10px;
+    margin: 0 0 10px;
     font-size: 20px;
 }
 
 .marker-card p {
     margin: 4px 0;
-    font-size: 16px;
-}
-
-.cancel-form {
-    margin-top: 10px;
-}
-
-.btn-cancel {
-    background-color: #ff5252;
-    color: #fff;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 10px;
-    cursor: pointer;
-}
-
-.btn-cancel:hover {
-    background-color: #e04343;
-}
-
-.nav-buttons {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 40px;
-}
-
-.btn-back, .btn-logout {
-    background-color: #1976d2;
-    color: white;
-    padding: 10px 20px;
-    text-decoration: none;
-    border-radius: 10px;
-}
-
-.btn-back:hover, .btn-logout:hover {
-    background-color: #145aa2;
-}
-
-.profile-info {
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 16px;
-    margin-bottom: 40px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-}
-
-.profile-info h2 {
-    font-size: 24px;
-    margin-bottom: 15px;
-    border-bottom: 1px solid #ddd;
-    padding-bottom: 8px;
-}
-
-.profile-info ul {
-    list-style: none;
-    padding: 0;
-}
-
-.profile-info li {
-    padding: 6px 0;
-    font-size: 16px;
-}
-
-.profile-info li strong {
-    min-width: 130px;
-    display: inline-block;
-}
-
-.status {
-    padding: 4px 10px;
-    border-radius: 8px;
-    font-weight: bold;
-}
-
-.status.online {
-    background-color: #4caf50;
-    color: white;
-}
-
-.status.offline {
-    background-color: #ccc;
+    font-size: 15px;
     color: #444;
 }
 
-.edit-button, .save-button {
-    padding: 10px 16px;
-    background-color: #007bff;
-    border: none;
-    border-radius: 10px;
-    color: white;
-    font-size: 16px;
-    cursor: pointer;
-    margin-top: 10px;
+/* Форма отмены */
+.cancel-form {
+    margin-top: 12px;
 }
 
-.edit-button:hover, .save-button:hover {
-    background-color: #0056b3;
+/* Фото профиля */
+.round-photo {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #ccc;
 }
 
-.status.online {
-    color: green;
-    font-weight: bold;
-}
-
-.status.offline {
-    color: gray;
-    font-weight: bold;
-}
-
-.back-link, .logout-link {
-    display: inline-block;
+.photo-container {
     margin-top: 20px;
-    margin-right: 20px;
+}
+
+.photo-preview {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.photo-preview img {
+    max-width: 150px;
+    border-radius: 50%;
+}
+
+input[type="file"] {
+    display: block;
+    margin: 10px auto;
+    text-align: center;
+}
+
+/* Ссылки */
+.back-link,
+.logout-link {
     font-size: 16px;
     color: #007bff;
     text-decoration: none;
 }
 
-.back-link:hover, .logout-link:hover {
+.back-link:hover,
+.logout-link:hover {
     text-decoration: underline;
+}
+
+/* Адаптивность */
+@media screen and (max-width: 768px) {
+    .form-buttons {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .btn-back,
+    .btn-logout {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+.profile-photo-top {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+    margin-bottom: 30px;
+}
+
+.square-photo {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 12px; /* или 0 если прямой угол нужен */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }

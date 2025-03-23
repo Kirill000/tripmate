@@ -1,19 +1,39 @@
 {% load static %}
 
-<link href="{% static "css/register.css" %}" rel="stylesheet" />
-
-<h2>Register</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Register</button>
-</form>
-<p>Already have an account? <a href="{% url 'login' %}">Login here</a></p>
-
-
-{% comment %} 
-{% block extra_js %}
-
-
-{% endblock %} 
-{% endcomment %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link href="{% static 'css/register.css' %}" rel="stylesheet">
+</head>
+<body>
+    <div class="register-page">
+        <div class="register-form-container">
+            <h2>Register</h2>
+            <form method="post" class="register-form">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="form-group">
+                        {{ field.label_tag }}
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="field-errors">
+                                {{ field.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                {% if form.non_field_errors %}
+                    <div class="non-field-errors">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+                <button type="submit" class="register-button">Register</button>
+            </form>
+            <p class="login-text">Already have an account? <a href="{% url 'login' %}">Login here</a></p>
+        </div>
+    </div>
+</body>
+</html>

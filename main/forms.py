@@ -32,4 +32,4 @@ class UserForm(forms.ModelForm):
 class ProfileForm(forms.ModelForm):
     class Meta:
         model = Profile
-        fields = ['phone_number', 'telegram', 'whatsapp', 'vk']
+        fields = ['photo', 'phone_number', 'telegram', 'whatsapp', 'vk']

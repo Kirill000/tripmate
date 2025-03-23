@@ -20,12 +20,12 @@ max-height: 80vh;
 overflow-y: auto;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 391px) {
 .marker-form-container {
-    width: 90%;
+    position: absolute;
+    top: 80px;
     left: 5%;
     right: 5%;
-    top: auto;
     bottom: 20px;
 }
 }
