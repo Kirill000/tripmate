@@ -277,12 +277,16 @@ def add_marker(request):
                 marker.phone_number = user.phone_number
             if marker.whatsapp == None:
                 marker.whatsapp = user.whatsapp
-                
-            if marker.landmark_photo != None:
-                os.rename(os.path.join(BASE_DIR, 'main'+marker.landmark_photo.url[5:]), os.path.join(BASE_DIR, f"main//static/images/landmark{request.user.id}"))
-                marker.landmark_photo = f"/images/landmark{request.user.id}"
-                
+            
             marker.save()
+            
+            if marker.landmark_photo != None:
+                if os.path.exists(f"main/static/images/landmark{request.user.id}.jpg"):
+                    os.remove(f"main/static/images/landmark{request.user.id}.jpg")
+                os.rename(os.path.join(BASE_DIR, marker.landmark_photo.url[1:]), os.path.join(BASE_DIR, f"main/static/images/landmark{request.user.id}.jpg"))
+                marker.landmark_photo = f"/images/landmark{request.user.id}.jpg"
+                marker.save()
+                
             return redirect('map')
         else:
             print(form.errors)
@@ -392,7 +396,9 @@ def profile(request, user_id):
                 
                 profile.first_name = request.POST['first_name']
                 profile.last_name = request.POST['last_name']
-
+                
+                if os.path.exists(f"main/static/images/profile_logo{request.user.id}.jpg"):
+                    os.remove(f"main/static/images/profile_logo{request.user.id}.jpg")
                 os.rename(os.path.join(BASE_DIR, 'main'+profile.photo.url[5:]), os.path.join(BASE_DIR, f"main/static/images/profile_logo{request.user.id}.jpg"))
                 profile.photo = f"/images/profile_logo{request.user.id}.jpg"
                 
