@@ -8,6 +8,12 @@
     font-family: 'Segoe UI', sans-serif;
 }
 
+.marker-edit-container {
+    max-width: 300px;
+    align-items: center;
+    margin: auto;
+}
+
 .edit-marker-container h2 {
     font-size: 26px;
     margin-bottom: 25px;

@@ -3,14 +3,66 @@
 
 {% block extra_css %}
 <link href="{% static "css/chat.css" %}" rel="stylesheet" />
+<style>
+  a {
+    text-decoration: none;
+  }
+
+  strong {
+    align-self: center;
+    margin-right: 5px;
+  }
+
+  .chat-container {
+    width: 90%;
+    margin: auto;
+    padding: 20px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  .chat-box {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background: #f9f9f9;
+  }
+  .chat-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .message-text {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    resize: none;
+  }
+  .submit-btn {
+    align-self: flex-end;
+    padding: 10px 15px;
+    border: none;
+    background: #007bff;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  .submit-btn:hover {
+    background: #0056b3;
+  }
+
+</style>
 {% endblock %}
 
 {% block content %}
 <div class="chat-container">
-  <h2 class="chat-header">Чат по маркеру {{marker.id}}</h2>
-  <small><b>Пункт отправки:</b> {{ marker.start_point }}</small><br>
-  <small><b>Пункт назначения:</b> {{ marker.end_point }}</small>
-  <p class="chat-info">Собеседник: {{ to_user.username }} {% if to_user.userstatus.is_online %}(Онлайн){% endif %}</p>
+  <a href="{% url 'profile' marker.user.id %}"><h2 class="chat-header">{{ to_user.username }} {% if to_user.userstatus.is_online %}(онлайн){% endif %}</h2></a>
+  <a href="{% url 'profile' request.user.id %}"><p class="chat-info">Маркер {{marker.title}}</p></a>
 
   <div id="chat-box" class="chat-box"></div>
 
@@ -24,7 +76,6 @@
 {% endblock %}
 
 {% block extra_js %}
-
 <script>
 
   //let user_query_data = "{{ user_query_data }}";  // ← заранее объявляем переменную
@@ -48,18 +99,21 @@
           let messageClass = m.from === '{{ request.user.username }}' ? 'from-user' : 'to-user';
           
           if (m.notify_type == 'user_query') {
-            pickupMapLink = `<br><small><a href="https://yandex.ru/maps/?rtext={{user_query_data.lon}}%2C{{user_query_data.lat}}&z=11.2" target="_blank">📍 Посмотреть на карте: {{user_query_data.point}}</a></small>`;
+            pickupMapLink = '<br><small><a href="https://yandex.ru/maps/?rtext={{user_query_data.lon}}%2C{{user_query_data.lat}}&z=11.2" target="_blank">📍 Посмотреть на карте: {{user_query_data.point}}</a></small>';
             //https://yandex.ru/maps/?ll=-14.002575%2C49.972191&mode=search&pt=%2C53.202742353507254&sll={{user_query_data.pickup_lon}}%2C{{user_query_data.pickup_lat}}&text={{user_query_data.pickup_lon}}%2C{{user_query_data.lat}}&z=11.2
-            box.innerHTML += `<p class="message ${messageClass}">
-              <strong>${m.from}:</strong> ${m.text}
-              ${pickupMapLink}
+            box.innerHTML += `<p id="notification" class="message ${messageClass}">
+              <strong>Уведомление от пользователя ${m.from}</strong> ${m.text}. <b><br>Точка посадки пользователя: </b> {{user_query_data.point}} <small>({{user_query_data.lon}}, {{user_query_data.lat}})</small>
               <span class="timestamp">${m.timestamp.split(" ")[1]}</span><br>
-              <button class="user-query-reply" id="decline">Decline</button>
-              <button class="user-query-reply" id="approve">Approve</button>
+              {% if request.user.id == marker.user.id %}
+              <button class="user-query-reply" onclick='SendMessage(1, "decline")' id="decline">Decline</button>
+              <button class="user-query-reply" onclick='SendMessage(1, "approve")' id="approve">Approve</button>
+              {% endif %}
             </p>`;
-          
-            
+            /*
+            {% if request.user.id == marker.user.id %}
+            console.log('init', document.getElementById("approve"));
             document.getElementById("approve").addEventListener('click', function(e){
+              console.log('called')
               e.preventDefault();
               SendMessage(1, "approve");
             })
@@ -68,8 +122,9 @@
               e.preventDefault();
               SendMessage(1, "decline");
             })
+            {% endif %}*/
           } else {
-            box.innerHTML += `<p class="message ${messageClass}"><strong>${m.from}:</strong> ${m.text} <span class="timestamp">${m.timestamp.split(" ")[1]}</span></p>`;
+            box.innerHTML += `<p class="message ${messageClass}"><strong>${m.from}</strong> ${m.text} <span class="timestamp">${m.timestamp.split(" ")[1]}</span></p>`;
           }
         });
         box.scrollTop = box.scrollHeight; // Прокручиваем чат до конца
@@ -88,21 +143,13 @@ document.getElementById('message-form').addEventListener('submit', function(e) {
 });
 
 function SendMessage(notify, id){
-
   let formData = new FormData();
 
   formData.append("to_user_id", document.getElementById('to_user_id').value);
   formData.append("marker_id", document.getElementById('marker_id').value);
 
-  if (!notify) {
-    msg = document.getElementById('message-text').value;
-  } else {
-    if (id == 'decline'){
-      msg = "К сожалению пользователь {{request.user}} отказал Вам в поездке :(";
-    } else {
-      msg = "Пользователь {{request.user}} подтвердил Ваш запрос на поездку!";
-    }
-  }
+  msg = document.getElementById('message-text').value;
+
   formData.append('notify_type', id);
   formData.append("text", msg);
 
@@ -117,5 +164,4 @@ function SendMessage(notify, id){
 }
 
 </script>
-
-{% endblock %} 
+{% endblock %}

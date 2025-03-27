@@ -1,9 +1,11 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.db.models.signals import pre_delete
+from django.dispatch.dispatcher import receiver
 
 class Profile(models.Model):
-    photo = models.ImageField(upload_to='main/static/profile_photos/', default="profile_photos/default_profile.jpg")
+    photo = models.ImageField(upload_to='main/static/images/', default="images/default_profile.jpg")
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     status = models.CharField(max_length=200, blank=True, null=True)
     first_name = models.CharField(max_length=100, blank=True)
@@ -24,10 +26,11 @@ class Marker(models.Model):
         ('personal', 'Личный транспорт'),
         ('carsharing', 'Каршеринг'),
         ('taxi', 'Такси'),
+        ('searching', 'Ищу транспорт'),
         ('other', 'Другое'),
     ]
     is_active = models.BooleanField(default=True)
-    title = models.CharField(max_length=100)
+    title = models.CharField(max_length=40, blank=False, null=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     transport_type = models.CharField(max_length=50, choices=TRANSPORT_CHOICES)
     other_transport = models.CharField(max_length=255, blank=True, null=True)
@@ -38,7 +41,7 @@ class Marker(models.Model):
     end_point = models.CharField(max_length=255)
     end_lat = models.FloatField()
     end_lon = models.FloatField()
-    landmark_photo = models.ImageField(upload_to='landmarks/', blank=True, null=True)
+    landmark_photo = models.ImageField(upload_to='main/static/images/', blank=True, null=True)
     landmark_description = models.TextField(blank=True, null=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     active_from = models.DateTimeField()
@@ -65,3 +68,8 @@ class UserStatus(models.Model):
 
     def is_online(self):
         return timezone.now() - self.last_seen < timezone.timedelta(minutes=5)
+
+@receiver(pre_delete, sender=Marker)
+def image_model_delete(sender, instance, **kwargs):
+    if instance.landmark_photo.name:
+        instance.landmark_photo.delete(False)

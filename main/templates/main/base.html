@@ -18,7 +18,7 @@
     <div>
       <a href="{% url 'profile' request.user.id %}">My Profile</a>
       <a href="/">Map</a>
-      <a href="{% url 'profile' 1 %}">About</a>
+      <a href="{% url 'dialog_list' %}">Chats</a>
       <form method="post" action="{% url 'logout' %}" style="display: inline; margin-right: auto;">
         {% csrf_token %}
         <button type="submit" style="position: absolute; right: 10px;">Logout</button>

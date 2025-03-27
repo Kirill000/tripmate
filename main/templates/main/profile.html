@@ -80,6 +80,14 @@
             <span class="status offline">Оффлайн</span>
         {% endif %}
     </h2>
+    {% else %}
+    <h2>{{ profile_data.user }}
+        {% if is_online %}
+            <span class="status online">Онлайн</span>
+        {% else %}
+            <span class="status offline">Оффлайн</span>
+        {% endif %}
+    </h2>
     {% endif %}
 
     <ul>
@@ -120,7 +128,7 @@
         <div class="marker-list">
             {% for marker in own_markers %}
                 <div class="marker-card">
-                    <h3>{{ marker.title }}</h3>
+                    <h3>Поездка {{ marker.title }} {{ marker.active_to }}</h3>
                     <p><b>Транспорт</b>: {{ marker.get_transport_type_display }}</p>
                     <p><b>Маршрут</b>: {{ marker.start_point }} → {{ marker.end_point }}</p>
                     <p><b>Кол-во мест</b>: {{ marker.people_count }}</p>
@@ -131,7 +139,7 @@
                             <a href="{% url 'edit_marker' marker.id %}" class="btn-cancel" style="background-color: #4c70ff">Редактировать</a> |
                             <a href="{% url 'delete_marker' marker.id %}" class="btn-cancel">Удалить</a>
                         {% else %}
-                            <button class="btn-cancel">Удалена</button>
+                            <button type="button" class="btn-cancel">Удалена</button>
                         {% endif %}
                     </form>
                 </div>
@@ -144,24 +152,52 @@
         <div class="marker-list">
             {% for marker in responded_markers %}
                 <div class="marker-card">
-                    <h3>{{ marker.title }}</h3>
+                    <h3>Поездка {{ marker.title }} {{ marker.active_to }}</h3>
                     <p><b>Транспорт</b>: {{ marker.get_transport_type_display }}</p>
                     <p><b>Маршрут</b>: {{ marker.start_point }} → {{ marker.end_point }}</p>
                     <p><b>Кол-во мест</b>: {{ marker.people_count }}</p>
-                    <form method="post" class="cancel-form">
-                        {% csrf_token %}
-                        <input type="hidden" name="cancel_trip_id" value="{{ marker.id }}">
-                        <button type="submit" class="btn-cancel">Отменить поездку</button>
-                    </form>
+
+                    {% for user_id, user_data in marker.users.items %}
+                        {% if user_id|floatformat:"0" == request.user.id|floatformat:"0" %}
+                            {% if user_data.is_approved is none %}
+                                <button type="button" class="btn-cancel" style="background-color: orange">Ожидание ответа</button>
+                            {% elif user_data.is_approved == 1 %}
+                                
+                                {% if marker.is_active %}
+                                    <!-- Отображение всех полей, кроме служебных -->
+                                    {% if marker.other_transport %}<p><b>Другой транспорт</b>: {{ marker.other_transport }}</p>{% endif %}
+                                    {% if marker.landmark_photo %}<p><b>Фото ориентира</b><br> <img class="landmark-photo" src="{{ marker.landmark_photo.url }}" alt="Ориентир"></p>{% endif %}
+                                    {% if marker.landmark_description %}<p><b>Описание ориентира</b>: {{ marker.landmark_description }}</p>{% endif %}
+                                    {% if marker.price %}<p><b>Цена</b>: {{ marker.price }} ₽</p>{% endif %}
+                                    {% if marker.comment %}<p><b>Комментарий</b>: {{ marker.comment }}</p>{% endif %}
+                                    {% if marker.telegram %}<p><b>Telegram</b>: {{ marker.telegram }}</p>{% endif %}
+                                    {% if marker.whatsapp %}<p><b>WhatsApp</b>: {{ marker.whatsapp }}</p>{% endif %}
+                                    {% if marker.vk %}<p><b>VK</b>: {{ marker.vk }}</p>{% endif %}
+                                    {% if marker.phone_number %}<p><b>Телефон</b>: {{ marker.phone_number }}</p>{% endif %}
+                                    <button type="button" class="btn-cancel" style="background-color: green">Поездка одобрена</button>
+                                    <button type="submit" class="btn-cancel">Отменить поездку</button>
+                                {% else %}
+                                    <button type="button" class="btn-cancel">Поездка удалена</button>
+                                {% endif %}
+                            
+                            {% elif user_data.is_approved == 0 %}
+                                <button type="button" class="btn-cancel">Запрос отклонен</button>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
                 </div>
             {% empty %}
                 <p>Вы не откликались ни на один маршрут.</p>
             {% endfor %}
         </div>
+
     </div>
 {% endif %}
 
 <script>
+    {% if not profile_data.first_name %}
+    alert("Заполните Ваш профиль!")
+    {% endif %}
     function toggleProfileForm() {
         //try {
             const formBlock = document.getElementById("profile-form-container");

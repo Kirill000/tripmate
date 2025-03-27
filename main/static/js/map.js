@@ -1,7 +1,30 @@
 let map = L.map('map', {
     maxZoom: 16,
+    minZoom: 3,
     worldCopyJump: false // Отключаем дублирование карты
 });
+
+var blueIcon = L.icon({
+    iconUrl: marker_img,
+    iconSize: [25, 38],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -32]
+});
+
+var orangeIcon = L.icon({
+    iconUrl: marker_x,
+    iconSize: [25, 38],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -32]
+});
+
+function updateProgress(value) {
+    let progressBar = document.getElementById("progressBar");
+    progressBar.style.width = value + "%";
+    if (value == 100){
+        setTimeout(function(){progressBar.style.width = 0;}, 1000);
+    }
+  }  
 
 var southWest = L.latLng(-180, -180),
 northEast = L.latLng(180, 180);
@@ -16,7 +39,7 @@ navigator.geolocation.getCurrentPosition(function(pos) {
 let { latitude, longitude } = pos.coords;
 map.setView([latitude, longitude], 13);
 }, function() {
-map.setView([51.505, -0.09], 13);
+map.setView([55.75, 37.62], 13);
 });
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -28,10 +51,19 @@ let selectingEnd = false;
 let startMarker = null;
 let endMarker = null;
 let tempPopup = null;
+let popupRevealed = false;
+let tempPopupMarker = null;
+let oldMarkers = [];
 
 function toggleForm(show = true) {
 let form = document.getElementById('markerForm');
 form.style.display = show ? 'flex' : 'none';
+}
+
+function hideMakerForm() {
+    let markerForm = document.getElementById('markerForm');
+    markerForm.style.display = 'none';
+    map.removeLayer(tempPopupMarker);
 }
 
 function toggleOtherTransport() {
@@ -54,9 +86,11 @@ alert("Выберите конечную точку на карте");
 }
 
 function reverseGeocode(lat, lng, callback) {
+updateProgress(50);
 fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`)
     .then(response => response.json())
     .then(data => {
+    updateProgress(100);
     callback(data.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`);
     })
     .catch(() => {
@@ -64,8 +98,101 @@ fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=
     });
 }
 
-map.on('click', function(e) {
+function loadMarkers(){
+    let center = map.getCenter();
+    let bounds = map.getBounds();
+    let distance = center.distanceTo(bounds.getNorthEast()); // Радиус для поиска
 
+    const now = new Date();
+    // Получаем текущую дату и время
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0'); // Месяц начинается с 0
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+
+    // Форматируем строку в нужный формат (yyyy-mm-ddThh:mm)
+    const currentTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+
+    if (~isDetailsOpen) {
+    fetch(`markers/?lat=${center.lat}&lon=${center.lng}&radius=${distance}&ctime=${currentTime}`)
+        .then(response => response.json())
+        .then(data => {
+
+            oldMarkers.forEach(mk => map.removeLayer(mk));
+
+            //delete from webpage
+
+            marker_imgs = document.getElementsByClassName('leaflet-marker-icon leaflet-zoom-animated leaflet-interactive');
+            marker_imgs_box = document.getElementsByClassName('leaflet-marker-shadow leaflet-zoom-animated');
+
+            Array.prototype.forEach.call(marker_imgs, (mk) => {
+                mk.remove();
+            })
+            let i = 0;
+            Array.prototype.forEach.call(marker_imgs_box, (mk) => {
+                if ((i >= marker_imgs.length)){
+                    mk.remove();
+                }
+                i++;
+            })
+
+            oldMarkers = [];
+            
+            data.markers.forEach(marker => {
+                markerData = {
+                id:  marker.id,
+                title: marker.title,
+                user_id: marker.user,
+                start_point: marker.start_point,
+                end_point: marker.end_point,
+                start_lat: marker.start_lat,
+                start_lon: marker.start_lon,
+                end_lat: marker.end_lat,
+                end_lon: marker.end_lon,
+                transport_type: marker.transport_type,
+                people_count: marker.people_count,
+                price: marker.price,
+                comment: marker.comment,
+                active_from: marker.active_from,
+                active_to: marker.active_to,
+                telegram: marker.telegram,
+                whatsapp: marker.whatsapp,
+                vk: marker.vk,
+                phone_number: marker.phone_number
+                };
+                
+                popupHtml = `
+                <div>
+                    <strong>Маршрут:</strong> ${markerData.start_point} → ${markerData.end_point}<br>
+                    <strong>Транспорт:</strong> ${markerData.transport_type}<br>
+                    <strong>Цена:</strong> ${markerData.price} ₽<br>
+                    <button class="show-details-button" onclick='showDetails(${JSON.stringify(markerData)})'>Подробнее</button>
+                </div>
+                `;
+
+                let icon = null;
+
+                if (marker.transport_type == "Ищу транспорт"){
+                    icon = orangeIcon;
+                }else {
+                    icon = blueIcon;
+                }
+                
+                L.marker([marker.start_lat, marker.start_lon], { icon: icon }).addTo(map)
+                .bindPopup(popupHtml);
+                oldMarkers.push(marker);
+            });
+        })
+    }
+        //.catch(error => console.error('Ошибка загрузки маркеров:', error));
+}
+
+map.on('moveend', function(e) {
+    loadMarkers();
+});
+
+map.on('click', function(e) {
 if (isDetailsOpen) return;  // Блокируем добавление маркера при открытом окне
 let lat = e.latlng.lat;
 let lng = e.latlng.lng;
@@ -78,9 +205,19 @@ if (waitingPickup) {
     pickupMarker = L.marker([pickupLat, pickupLng], { draggable: true }).addTo(map);
     reverseGeocode(pickupLat, pickupLng, function(address) {
     pickupPoint = address;
-    alert(`Место посадки выбрано: ${pickupPoint}`);
-    waitingPickup = false;
-    sendGoMessage(markerData);
+    
+    // Показываем модальное окно подтверждения
+    const confirmed = confirm(`Вы выбрали точку: ${address}\n\nКоординаты: ${pickupLat.toFixed(6)}, ${pickupLng.toFixed(6)}\n\nПодтвердить выбор?`);
+            
+     if (confirmed) {
+        waitingPickup = false;
+        sendGoMessage(markerData);
+     }else {
+        // Если пользователь не подтвердил, оставляем режим выбора
+        map.removeLayer(pickupMarker);
+        pickupMarker = null;
+        alert("Выберите точку снова");
+     }
     });
     return;
 }    
@@ -122,10 +259,11 @@ reverseGeocode(lat, lng, function(address) {
     let popupContent = `
     <div>
         <strong>${address}</strong><br/>
-        <button onclick="addMarkerFromPopup(${lat}, ${lng}, \`${address.replace(/`/g, '\\`')}\`)">Добавить здесь</button>
+        <button class="add-marker-button" onclick="addMarkerFromPopup(${lat}, ${lng}, \`${address.replace(/`/g, '\\`')}\`)">Добавить здесь</button>
     </div>
     `;
-    tempPopup = L.popup()
+    tempPopupMarker = L.popup();
+    tempPopup = tempPopupMarker
     .setLatLng([lat, lng])
     .setContent(popupContent)
     .openOn(map);
@@ -182,18 +320,18 @@ let content = `
     <strong>Транспорт:</strong> ${data.transport_type}<br>
     <strong>Кол-во людей:</strong> ${data.people_count}<br>
     <strong>Цена:</strong> ${data.price} ₽<br>
-    <strong>Комментарий:</strong> ${data.comment}<br>
-    <strong>Период:</strong> ${data.active_from} — ${data.active_to}<br>
+    ${data.comment ? `<strong>Комментарий:</strong> ${data.comment}<br>` : ""}
+    <strong>Время начала поездки:</strong> ${data.active_to}<br>
     <hr>
     <strong>Контакты:</strong><br>
-    Telegram: ${data.telegram}<br>
-    WhatsApp: ${data.whatsapp}<br>
-    VK: ${data.vk}<br>
-    Телефон: ${data.phone_number}
+    ${data.telegram ? `Telegram: ${data.telegram}<br>` : ""}
+    ${data.whatsapp ? `WhatsApp: ${data.whatsapp}<br>` : ""}
+    ${data.vk ? `VK: ${data.vk}<br>` : ""}
+    ${data.phone_number ? `Телефон: ${data.phone_number}` : ""}
 `;
 document.getElementById('detailsContent').innerHTML = content;
 document.getElementById('markerDetailsCard').style.display = 'flex';
-if (data.user != "{{request.user}}") {
+if (data.user_id != user_id) {
     document.getElementById('markerDetailsCardConnect').href = `chat/${data.id}/${data.user_id}`;
     document.getElementById('go-button').addEventListener('click', function(e){
     e.preventDefault();
@@ -202,16 +340,19 @@ if (data.user != "{{request.user}}") {
 } else {
     document.getElementById('markerDetailsCardConnect').remove();
     document.getElementById('go-button').remove();
+    document.getElementById('markerDetailsCard').innerHTML += `<a href="/profile/${user_id}" class="edit-button" id="edit-button">Редактировать</a>`
+    
 }
+
+// Нарисовать новый маршрут (линию между двумя точками)
+const startCoords = [data.start_lat, data.start_lon];
+const endCoords = [data.end_lat, data.end_lon];
 
 // Удалить старый маршрут
 if (routeLine) {
     map.removeLayer(routeLine);
 }
 
-// Нарисовать новый маршрут (линию между двумя точками)
-const startCoords = [data.start_lat, data.start_lon];
-const endCoords = [data.end_lat, data.end_lon];
 routeLine = L.polyline([startCoords, endCoords], {
     color: '#007bff',
     weight: 5,
@@ -239,6 +380,10 @@ function go(data) {
 // Показываем плашку выбора точки
 document.getElementById('pickupPrompt').style.display = 'block';
 
+document.getElementsByClassName('leaflet-popup-content')[0].style.display = 'none';
+// Скрываем детали
+hideDetails()
+
 // По кнопке "Подтвердить стартовую точку"
 document.getElementById('confirmDefaultPickup').onclick = function() {
     pickupPoint = data.start_point;
@@ -256,6 +401,10 @@ document.getElementById('selectPickupFromMap').onclick = function() {
     document.getElementById('pickupPrompt').style.display = 'none';
 };
 }
+
+map.addEventListener('load', (event) => {
+    loadMarkers()
+})
 
 function sendGoMessage(data) {
 console.log("Отправка сообщения пользователю...");
