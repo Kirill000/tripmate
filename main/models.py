@@ -3,6 +3,9 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from django.db.models.signals import pre_delete
 from django.dispatch.dispatcher import receiver
+import os
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 class Profile(models.Model):
     photo = models.ImageField(upload_to='main/static/images/', default="images/default_profile.jpg")
@@ -72,4 +75,7 @@ class UserStatus(models.Model):
 @receiver(pre_delete, sender=Marker)
 def image_model_delete(sender, instance, **kwargs):
     if instance.landmark_photo.name:
-        instance.landmark_photo.delete(False)
+        try:
+            os.remove(os.path.join(BASE_DIR, 'main/static'+instance.landmark_photo.url))
+        except:
+            pass

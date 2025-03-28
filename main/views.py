@@ -443,35 +443,35 @@ def delete_marker(request, marker_id):
         
     return redirect('profile', user_id=request.user.id)
 
-# @login_required
-# def cancel_participation(request, marker_id):
-#     #отменяем поездку пользователем, выбравшим метку
-#     marker = get_object_or_404(Marker, id=marker_id)
+@login_required
+def cancel_participation(request, marker_id):
+    #отменяем поездку пользователем, выбравшим метку
+    marker = get_object_or_404(Marker, id=marker_id)
 
-#     if str(request.user.id) in marker.users:
-#         # Увеличить количество пассажиров
-#         marker.people_count += 1
+    if str(request.user.id) in marker.users:
+        # Увеличить количество пассажиров
+        marker.people_count += 1
 
-#         # Удалить пользователя из списка
-#         del marker.users[str(request.user.id)]
-#         marker.save()
+        # Удалить пользователя из списка
+        del marker.users[str(request.user.id)]
+        marker.save()
 
-#         # Уведомить создателя
-#         Message.objects.create(
-#             from_user=request.user,
-#             to_user=marker.user,
-#             marker=marker,
-#             text=f"Пользователь {request.user.username} отказался от поездки '{marker.title}'.",
-#             notification_type='user_left'
-#         )
+        # Уведомить создателя
+        Message.objects.create(
+            from_user=request.user,
+            to_user=marker.user,
+            marker=marker,
+            text=f"Пользователь {request.user.username} отказался от поездки '{marker.title}'.",
+            notification_type='user_left'
+        )
 
-#         # Удалить поездку из профиля пользователя
-#         profile = get_object_or_404(Profile, user=request.user)
-#         if str(marker.id) in profile.trips:
-#             del profile.trips[str(marker.id)]
-#             profile.save()
+        # Удалить поездку из профиля пользователя
+        profile = get_object_or_404(Profile, user=request.user)
+        if str(marker.id) in profile.trips:
+            del profile.trips[str(marker.id)]
+            profile.save()
 
-#     return redirect('profile', user_id=request.user.id)
+    return redirect('profile', user_id=request.user.id)
 
 @login_required
 def edit_marker(request, marker_id):

@@ -166,7 +166,7 @@
                                 {% if marker.is_active %}
                                     <!-- Отображение всех полей, кроме служебных -->
                                     {% if marker.other_transport %}<p><b>Другой транспорт</b>: {{ marker.other_transport }}</p>{% endif %}
-                                    {% if marker.landmark_photo %}<p><b>Фото ориентира</b><br> <img class="landmark-photo" src="{{ marker.landmark_photo.url }}" alt="Ориентир"></p>{% endif %}
+                                    {% if marker.landmark_photo %}<p><b>Фото ориентира</b><br> <img class="landmark-photo" src="{% static marker.landmark_photo.url %}" alt="Ориентир"></p>{% endif %}
                                     {% if marker.landmark_description %}<p><b>Описание ориентира</b>: {{ marker.landmark_description }}</p>{% endif %}
                                     {% if marker.price %}<p><b>Цена</b>: {{ marker.price }} ₽</p>{% endif %}
                                     {% if marker.comment %}<p><b>Комментарий</b>: {{ marker.comment }}</p>{% endif %}
@@ -175,7 +175,11 @@
                                     {% if marker.vk %}<p><b>VK</b>: {{ marker.vk }}</p>{% endif %}
                                     {% if marker.phone_number %}<p><b>Телефон</b>: {{ marker.phone_number }}</p>{% endif %}
                                     <button type="button" class="btn-cancel" style="background-color: green">Поездка одобрена</button>
-                                    <button type="submit" class="btn-cancel">Отменить поездку</button>
+                                    <form method="post" class="cancel-form" style="display: inline-block;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="cancel_trip_id" value="{{ marker.id }}">
+                                        <button type="submit" class="btn-cancel">Отменить поездку</button>
+                                    </form>
                                 {% else %}
                                     <button type="button" class="btn-cancel">Поездка удалена</button>
                                 {% endif %}

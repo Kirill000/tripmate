@@ -17,7 +17,7 @@ urlpatterns = [
     path('dialogs/', views.dialog_list, name='dialog_list'),
     path('check-new-messages/', views.check_new_messages, name='check_new_messages'),
     path('marker/<int:marker_id>/delete/', views.delete_marker, name='delete_marker'),
-    # path('marker/<int:marker_id>/cancel/', views.cancel_participation, name='cancel_participation'),
+    path('marker/<int:marker_id>/cancel/', views.cancel_participation, name='cancel_participation'),
     path('marker/<int:marker_id>/edit/', views.edit_marker, name='edit_marker'),
     path('markers/', views.nearby_markers, name='get_markers'),
 
