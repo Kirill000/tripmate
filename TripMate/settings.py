@@ -46,8 +46,8 @@ EMAIL_HOST = 'smtp.mail.ru'
 EMAIL_PORT = 2525
 EMAIL_USE_SSL = False
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'tkd186@mail.ru'
-EMAIL_HOST_PASSWORD = 'betFzXYg7iDhj5MVK6gw'
+EMAIL_HOST_USER = 'noreply_cartrips@mail.ru'
+EMAIL_HOST_PASSWORD = 'AsudtEs4WuFbrmeehfU2'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -92,8 +92,12 @@ WSGI_APPLICATION = 'TripMate.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'CARTRIPS',                      
+        'USER': 'postgres',
+        'PASSWORD': 'admin',
+        'HOST': '',
+        'PORT': '5432',
     }
 }
 

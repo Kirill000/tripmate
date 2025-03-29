@@ -105,8 +105,8 @@
               <strong>Уведомление от пользователя ${m.from}</strong> ${m.text}. <b><br>Точка посадки пользователя: </b> {{user_query_data.point}} <small>({{user_query_data.lon}}, {{user_query_data.lat}})</small>
               <span class="timestamp">${m.timestamp.split(" ")[1]}</span><br>
               {% if request.user.id == marker.user.id %}
-              <button class="user-query-reply" onclick='SendMessage(1, "decline")' id="decline">Decline</button>
               <button class="user-query-reply" onclick='SendMessage(1, "approve")' id="approve">Approve</button>
+              <button class="user-query-reply" onclick='SendMessage(1, "decline")' id="decline">Decline</button>
               {% endif %}
             </p>`;
             /*

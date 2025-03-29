@@ -331,15 +331,26 @@ let content = `
 `;
 document.getElementById('detailsContent').innerHTML = content;
 document.getElementById('markerDetailsCard').style.display = 'flex';
+console.log('her')
 if (data.user_id != user_id) {
+    try{
+        document.getElementById('edit-button').remove();
+    } catch {
+        ;
+    }
+    document.getElementById('markerDetailsCard').innerHTML += `<button id="go-button">Поехали</button><a href="" class="chat-button" id="markerDetailsCardConnect">Связаться</a>`;
     document.getElementById('markerDetailsCardConnect').href = `chat/${data.id}/${data.user_id}`;
     document.getElementById('go-button').addEventListener('click', function(e){
     e.preventDefault();
     go(data);
     });
 } else {
-    document.getElementById('markerDetailsCardConnect').remove();
-    document.getElementById('go-button').remove();
+    try {
+        document.getElementById('markerDetailsCardConnect').remove();
+        document.getElementById('go-button').remove();
+    } catch {
+        ;
+    }
     document.getElementById('markerDetailsCard').innerHTML += `<a href="/profile/${user_id}" class="edit-button" id="edit-button">Редактировать</a>`
     
 }

@@ -31,6 +31,7 @@ def send_reset_code(request, user):
         if timezone.now() - usr.timestamp <= timedelta(minutes=2):    
             messages.error(request, 'Повторная отправка письма с подтверждением доступна только через 2 минуты')    
             return False
+        usr.conf_pwd = code
         usr.timestamp = timezone.now()
         usr.save()
     except Exception as error:
@@ -85,16 +86,15 @@ def reset_password_confirm(request):
 
 def send_confirmation_email(user, request):
     mail_subject = 'CarTrips: Подтвердите ваш email'
-    print(user.email)
     conf_num = random.randint(100000, 999999)
     
     try:
         u = UsersConfirmationTable.objects.get(user=user)
         if timezone.now() - u.timestamp <= timedelta(minutes=2):
-            print('f')
             messages.error(request, 'Повторная отправка письма с подтверждением доступна только через 2 минуты')   
             return False
         u.timestamp = timezone.now()
+        u.conf_pwd = conf_num
         u.save()
     except Exception as error:
         print(error)
@@ -102,8 +102,6 @@ def send_confirmation_email(user, request):
 
     mail = EmailMessage(subject=mail_subject, body=f"Ваш пароль для подтверждения входа в сервис: {conf_num}.\nПроигнорируйте это письмо если считаете, что письмо пришло по ошибке.", from_email=EMAIL_HOST_USER, to=[user.email])
     mail.send()
-    u.conf_pwd = conf_num
-    u.save()
 
 def register(request):
     if request.method == 'POST' and 'confirmation' not in request.POST:
@@ -137,8 +135,9 @@ def register(request):
         if str(conf_pwd) == str(conf_pwd_object.conf_pwd):
             conf_pwd_object.delete()
             login(request, user)
-            return redirect('map')
+            return redirect('profile', user.id)
         else:
+            messages.error(request, "Код неверный")
             return render(request, 'main/register.html', {'confirmation': 1, 'email': user.email, 'msg': 'Подтверждение неверно', 'username': user.username})
     else:
         
@@ -233,7 +232,7 @@ def send_message(request):
                 profile.save()
                 
                 #проверка на повторную отправку зарпроса
-                if str(request.user.id) in marker.users.keys():
+                if str(request.user.id) in marker.users.keys() or request.user.id == marker.user.id:
                     # return JsonResponse({'status': 'You cannot send query twice'})   
                     return redirect('profile', request.user.id)
 
@@ -297,7 +296,7 @@ def send_message(request):
             return JsonResponse({'status': 'ok'})
         
     #ошибка если пытаемся осуществить get запрос
-    return JsonResponse({'status': 'error'})
+    return redirect('map')
 
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371  # радиус Земли в километрах
@@ -380,7 +379,7 @@ def add_marker(request):
 
         form = MarkerForm(request.POST, request.FILES)
         try:
-            user = Profile.objects.get(id=request.user.id)
+            user = Profile.objects.get_or_create(id=request.user.id)
         except:
             return redirect('profile', request.user.id)
         if form.is_valid():
@@ -453,6 +452,7 @@ def profile(request, user_id):
             
     for marker in own_markers_raw:
         if timezone.now()-marker.active_to >= timedelta(days=2):
+            print('deleted')
             marker.delete()
         elif marker.active_to <= timezone.now():
             print(marker)
