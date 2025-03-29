@@ -12,20 +12,139 @@ from django.contrib import messages
 from math import radians, cos, sin, asin, sqrt
 import os
 # from TripMate.settings import os.getcwd()
+from django.core.mail import EmailMessage
+from django.contrib.sites.shortcuts import get_current_site
+from django.template.loader import render_to_string
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth import get_user_model
+from TripMate.settings import EMAIL_HOST_USER
+import random
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-def register(request):
+# Отправка кода на email
+def send_reset_code(request, user):
+    code = random.randint(100000, 999999)
+    try:
+        usr = UsersConfirmationTable.objects.get(user=user)
+        if timezone.now() - usr.timestamp <= timedelta(minutes=2):    
+            messages.error(request, 'Повторная отправка письма с подтверждением доступна только через 2 минуты')    
+            return False
+        usr.timestamp = timezone.now()
+        usr.save()
+    except Exception as error:
+        print(error)
+        UsersConfirmationTable.objects.update_or_create(user=user, defaults={'conf_pwd': code, 'timestamp': timezone.now()})
+
+    mail_subject = 'CarTrips: Восстановление пароля'
+    email_body = f"Ваш код для восстановления пароля: {code}\nИгнорируйте это письмо, если вы не запрашивали сброс пароля."
+    
+    email = EmailMessage(subject=mail_subject, body=email_body, from_email=EMAIL_HOST_USER, to=[user.email])
+    email.send()
+
+# Шаг 1: Запрос email для восстановления
+def reset_password_request(request):
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
+        email = request.POST.get('email')
+        try:
+            user = User.objects.get(email=email)
+            send_reset_code(request, user)
+            return render(request, 'main/password_reset_code.html', {'email': email})
+        except User.DoesNotExist:
+            messages.error(request, 'Пользователь с таким email не найден')
+    
+    return render(request, 'main/password_reset_request.html')
+
+# Шаг 2: Подтверждение кода и смена пароля
+def reset_password_confirm(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        code = request.POST.get('code')
+        new_password = request.POST.get('password')
+
+        try:
+            user = User.objects.get(email=email)
+            conf_record = UsersConfirmationTable.objects.get(user=user)
+
+            if str(conf_record.conf_pwd) == str(code):
+                user.set_password(new_password)
+                user.save()
+                conf_record.delete()
+                messages.success(request, 'Пароль успешно изменён! Войдите с новым паролем.')
+                return redirect('login')
+            else:
+                print('wrong code')
+                messages.error(request, 'Неверный код подтверждения!')
+        
+        except (User.DoesNotExist, UsersConfirmationTable.DoesNotExist):
+            print('Ошибка. Повторите попытку.')
+            messages.error(request, 'Ошибка. Повторите попытку.')
+
+    return render(request, 'main/password_reset_code.html', {'email': request.POST.get('email')})
+
+def send_confirmation_email(user, request):
+    mail_subject = 'CarTrips: Подтвердите ваш email'
+    print(user.email)
+    conf_num = random.randint(100000, 999999)
+    
+    try:
+        u = UsersConfirmationTable.objects.get(user=user)
+        if timezone.now() - u.timestamp <= timedelta(minutes=2):
+            print('f')
+            messages.error(request, 'Повторная отправка письма с подтверждением доступна только через 2 минуты')   
+            return False
+        u.timestamp = timezone.now()
+        u.save()
+    except Exception as error:
+        print(error)
+        UsersConfirmationTable.objects.update_or_create(user=user, conf_pwd=conf_num, timestamp=timezone.now())
+
+    mail = EmailMessage(subject=mail_subject, body=f"Ваш пароль для подтверждения входа в сервис: {conf_num}.\nПроигнорируйте это письмо если считаете, что письмо пришло по ошибке.", from_email=EMAIL_HOST_USER, to=[user.email])
+    mail.send()
+    u.conf_pwd = conf_num
+    u.save()
+
+def register(request):
+    if request.method == 'POST' and 'confirmation' not in request.POST:
+        form = RegistrationForm(request.POST)
+        
+        try:
+            user = User.objects.get(username=request.POST['username'])
+            UsersConfirmationTable.objects.get(user=user)
+            send_confirmation_email(user, request)
+            return render(request, 'main/register.html', {'confirmation': 1, 'email': user.email, 'username': user.username})
+        except Exception as error:
+            print(error)
+            if form.is_valid():
+                user = form.save(commit=False)
+                user.set_password(form.cleaned_data['password'])
+                user.save()
+
+                send_confirmation_email(user, request)
+
+                return render(request, 'main/register.html', {'confirmation': 1, 'email': user.email, 'username': user.username})  # Перенаправление на страницу логина
+            else:
+                form1 = RegistrationForm()
+                messages.error(request, form.errors.as_text())
+                return render(request, 'main/register.html', {'form': form1, 'confirmation': 0})
+            
+    elif request.method == 'POST' and 'confirmation' in request.POST:
+        conf_pwd = request.POST['conf_pwd']
+        print(request.POST['username'], 'us')
+        user = User.objects.get(username=request.POST['username'])
+        conf_pwd_object = UsersConfirmationTable.objects.get(user=user.id)
+        if str(conf_pwd) == str(conf_pwd_object.conf_pwd):
+            conf_pwd_object.delete()
             login(request, user)
-            Profile.objects.get_or_create(user=user)
             return redirect('map')
+        else:
+            return render(request, 'main/register.html', {'confirmation': 1, 'email': user.email, 'msg': 'Подтверждение неверно', 'username': user.username})
     else:
-        form = UserCreationForm()
-    return render(request, 'main/register.html', {'form': form})
+        
+        form = RegistrationForm()
+
+        return render(request, 'main/register.html', {'form': form, 'confirmation': 0})
 
 @login_required
 def chat_page(request, marker_id, to_user_id):

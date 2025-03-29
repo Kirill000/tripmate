@@ -4,3 +4,4 @@ from .models import *
 admin.site.register(Marker)
 admin.site.register(Message)
 admin.site.register(Profile)
+admin.site.register(UsersConfirmationTable)

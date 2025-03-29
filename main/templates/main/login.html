@@ -31,9 +31,17 @@
                         {{ form.non_field_errors }}
                     </div>
                 {% endif %}
+                {% if messages %}
+                    <div class="non-field-errors">
+                        {% for message in messages %}
+                            <p>{{ message }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
                 <button type="submit" class="login-button">Войти</button>
             </form>
             <p class="register-text">Нет аккаунта? <a href="{% url 'register' %}">Зарегистрироваться</a></p>
+            <p class="register-text">Забыли пароль? <a href="{% url 'reset-password' %}">Восстановить аккаунт</a></p>
         </div>
     </div>
 </body>

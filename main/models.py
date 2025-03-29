@@ -72,6 +72,11 @@ class UserStatus(models.Model):
     def is_online(self):
         return timezone.now() - self.last_seen < timezone.timedelta(minutes=5)
 
+class UsersConfirmationTable(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    conf_pwd = models.CharField(max_length=10)
+
 @receiver(pre_delete, sender=Marker)
 def image_model_delete(sender, instance, **kwargs):
     if instance.landmark_photo.name:

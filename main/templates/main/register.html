@@ -12,28 +12,58 @@
 <body>
     <div class="register-page">
         <div class="register-form-container">
-            <h2>Register</h2>
-            <form method="post" class="register-form">
-                {% csrf_token %}
-                {% for field in form %}
+            {% if confirmation %}
+                <h2>Confirm e-mail</h2>
+                <p>Письмо было отправлено на почту {{email}}. <br><small>Если письмо не пришло, попробуйте повторить регистрацию через 2 минуты.</small></p>
+                <form method="post" class="register-form">
+                    {% csrf_token %}
                     <div class="form-group">
-                        {{ field.label_tag }}
-                        {{ field }}
-                        {% if field.errors %}
-                            <div class="field-errors">
-                                {{ field.errors }}
+                        <input type="hidden" name="confirmation" value="1"/>
+                        <input type="hidden" name="username" value="{{username}}"/>
+                        <input type="text" name="conf_pwd"/>
+                        {% if messages %}
+                            <div class="non-field-errors">
+                                {% for message in messages %}
+                                    <p>{{ message }}</p>
+                                {% endfor %}
                             </div>
                         {% endif %}
+                        <button type="submit" class="register-button" style="margin-top: 10px">Confirm</button>
                     </div>
-                {% endfor %}
-                {% if form.non_field_errors %}
-                    <div class="non-field-errors">
-                        {{ form.non_field_errors }}
-                    </div>
-                {% endif %}
-                <button type="submit" class="register-button">Register</button>
-            </form>
-            <p class="login-text">Already have an account? <a href="{% url 'login' %}">Login here</a></p>
+                    <br>
+                </form>
+            {% else %}
+                <h2>Register</h2>
+                <form method="post" class="register-form">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="form-group">
+                            {{ field.label_tag }}
+                            {{ field }}
+                            {% if field.errors %}
+                                <div class="field-errors">
+                                    {{ field.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    {% if form.non_field_errors %}
+                        <div class="non-field-errors">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+                    {% if messages %}
+                        <div class="non-field-errors">
+                            {% for message in messages %}
+                                <p>{{ message }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <button type="submit" class="register-button">Register</button>
+                </form>
+                <p class="login-text">Already have an account? <a href="{% url 'login' %}">Login here</a></p>
+            {% endif %}
+
         </div>
     </div>
 </body>

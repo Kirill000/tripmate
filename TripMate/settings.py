@@ -41,6 +41,14 @@ INSTALLED_APPS = [
     'main'
 ]
 
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = 'smtp.mail.ru'
+EMAIL_PORT = 2525
+EMAIL_USE_SSL = False
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'tkd186@mail.ru'
+EMAIL_HOST_PASSWORD = 'betFzXYg7iDhj5MVK6gw'
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
