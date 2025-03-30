@@ -2,7 +2,6 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .forms import *
 from django.contrib.auth import login, logout
-from django.contrib.auth.forms import UserCreationForm
 from django.http import JsonResponse
 from .models import *
 from django.contrib.auth.models import User
@@ -11,17 +10,14 @@ from django.utils import timezone
 from django.contrib import messages
 from math import radians, cos, sin, asin, sqrt
 import os
-# from TripMate.settings import os.getcwd()
 from django.core.mail import EmailMessage
-from django.contrib.sites.shortcuts import get_current_site
-from django.template.loader import render_to_string
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.contrib.auth.tokens import default_token_generator
-from django.contrib.auth import get_user_model
-from TripMate.settings import EMAIL_HOST_USER
 import random
+from TripMate.settings import EMAIL_HOST_USER
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+def main(request):
+    return render(request, 'main/main.html')
 
 # Отправка кода на email
 def send_reset_code(request, user):
@@ -659,4 +655,4 @@ def edit_marker(request, marker_id):
 @login_required(login_url='login')
 def logout_view(request):
     logout(request)
-    return redirect('map')
+    return redirect('main')

@@ -2,7 +2,8 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('', views.map_view, name='map'),
+    path('', views.main, name='main'),
+    path('map/', views.map_view, name='map'),
     path('add/', views.add_marker, name='add_marker'),
     # Страница диалога (чат с пользователем по маркеру)
     path('chat/<int:marker_id>/<int:to_user_id>/', views.chat_page, name='chat_page'),
@@ -12,6 +13,7 @@ urlpatterns = [
 
     # AJAX — отправка сообщения
     path('send-message', views.send_message, name='send_message'),
+    path('logout/', views.logout_view, name='logout'),
 
     # Страница со списком всех диалогов
     path('dialogs/', views.dialog_list, name='dialog_list'),
@@ -20,7 +22,4 @@ urlpatterns = [
     path('marker/<int:marker_id>/cancel/', views.cancel_participation, name='cancel_participation'),
     path('marker/<int:marker_id>/edit/', views.edit_marker, name='edit_marker'),
     path('markers/', views.nearby_markers, name='get_markers'),
-
-    # AJAX — получение количества непрочитанных сообщений (для уведомлений)
-    # path('get-unread-count/', views.get_unread_count, name='get_unread_count'),
 ]
