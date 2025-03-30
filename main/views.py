@@ -148,7 +148,8 @@ def chat_page(request, marker_id, to_user_id):
     to_user = get_object_or_404(User, pk=to_user_id)
     
     #проверка на диалог с самим собой
-    if request.user != to_user:
+    print(request.user, to_user.username)
+    if request.user.id != to_user.id:
             
         try:
             if marker.user.id == request.user.id:
@@ -165,7 +166,6 @@ def chat_page(request, marker_id, to_user_id):
         })
         
     else:
-        
         return redirect('map')
         
 

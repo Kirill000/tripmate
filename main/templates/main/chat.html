@@ -61,7 +61,7 @@
 
 {% block content %}
 <div class="chat-container">
-  <a href="{% url 'profile' marker.user.id %}"><h2 class="chat-header">{{ to_user.username }} {% if to_user.userstatus.is_online %}(онлайн){% endif %}</h2></a>
+  <a href="{% url 'profile' marker.user.id %}"><h2 class="chat-header">{{ marker.user }} {% if to_user.userstatus.is_online %}(онлайн){% endif %}</h2></a>
   <a href="{% url 'profile' request.user.id %}"><p class="chat-info">Маркер {{marker.title}}</p></a>
 
   <div id="chat-box" class="chat-box"></div>

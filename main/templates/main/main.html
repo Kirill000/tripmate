@@ -5,9 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CarTrips Connect</title>
+    <link rel="icon" type="image/x-icon" href="{% static "images/carmap.png" %}">
     <style>
         .text-center {
             margin: auto;
+        }
+
+        @media (max-width: 391px) {
+            .text-center {
+                margin-top: 40px;
+            }
         }
     </style>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -26,6 +33,22 @@
                 <h2 class="text-5xl font-semibold">Находите попутчиков быстро и удобно</h2>
                 <p class="text-xl mt-4">Экономьте на поездках и находите компанию для путешествий</p>
             </main>
+            
+            <section class="w-full max-w-4xl text-center mt-10 p-6 bg-gray-800 bg-opacity-75 rounded-lg">
+                <h3 class="text-3xl font-semibold mb-4">О нас</h3>
+                <p class="text-lg">CarTrips Connect — это платформа, созданная для удобного поиска попутчиков. Мы помогаем людям находить совместные поездки, экономить деньги и делать путешествия комфортнее.</p>
+            </section>
+            
+            <footer class="w-full max-w-4xl text-center mt-6 p-6 bg-gray-900 bg-opacity-75 rounded-lg">
+                <h3 class="text-3xl font-semibold mb-4">Контакты</h3>
+                <p class="text-lg">Email: <a href="mailto:support@cartrips.com" class="text-blue-400 hover:underline">support@cartrips.com</a></p>
+                <p class="text-lg mt-2 flex justify-center items-center">
+                    Telegram:<a href="https://t.me/car_trips">&nbsp;cat_trips</a>
+                    <a href="https://t.me/car_trips" class="ml-2">
+                        <img style="diaplsy: inline-block;" src="{% static 'images/tg_logo.png' %}" alt="Telegram" class="w-8 h-8">
+                    </a>
+                </p>
+            </footer>
         </div>
     </div>
 </body>
