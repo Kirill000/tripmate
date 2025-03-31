@@ -1,55 +1,131 @@
-{% load static %}
 <!DOCTYPE html>
+{% load static %}
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CarTrips Connect</title>
-    <link rel="icon" type="image/x-icon" href="{% static "images/carmap.png" %}">
+    <link rel="icon" type="image/x-icon" href="images/carmap.png">
     <style>
-        .text-center {
-            margin: auto;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-
+        h3 {
+            margin-bottom: 10px;
+        }
+        .footer {
+            margin-top: 10px;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        .background {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            padding: 24px;
+            overflow-y: scroll;
+        }
+        .header, .section, .footer {
+            width: 100%;
+            max-width: 800px;
+            text-align: center;
+            background: rgba(50, 50, 50, 0.8);
+            padding: 16px;
+            border-radius: 8px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .title {
+            font-size: 32px;
+            font-weight: bold;
+        }
+        .login-btn {
+            background: #3b82f6;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            text-decoration: none;
+        }
+        .login-btn:hover {
+            background: #2563eb;
+        }
+        .main h2 {
+            font-size: 40px;
+            font-weight: 600;
+        }
+        .main p {
+            font-size: 20px;
+            margin-top: 16px;
+        }
+        .footer a {
+            color: #60a5fa;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        .tg-logo {
+            width: 32px;
+            height: 32px;
+            margin-bottom: -10px;
+            margin-left: -5px;
+        }
         @media (max-width: 391px) {
-            .text-center {
+            .main {
                 margin-top: 40px;
             }
         }
     </style>
-    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="h-screen w-screen overflow-hidden">
-    <div class="relative h-full w-full">
-        <img src="{% static 'images/background.jpg' %}" alt="Дорога и авто" class="absolute inset-0 w-full h-full object-cover">
+<body>
+    <img src="{% static 'images/background.jpg' %}" alt="Дорога и авто" class="background">
+    <div class="overlay">
+        <header class="header">
+            <h1 class="title">CarTrips Connect</h1>
+            <a href="/login" class="login-btn">Войти</a>
+        </header>
         
-        <div class="absolute inset-0 bg-black bg-opacity-50 flex flex-col justify-between items-center text-white p-6">
-            <header class="w-full max-w-6xl flex justify-between items-center">
-                <h1 class="text-4xl font-bold">CarTrips Connect</h1>
-                <a href="/login" class="bg-blue-500 text-white py-2 px-6 rounded-md hover:bg-blue-600">Войти</a>
-            </header>
-            
-            <main class="text-center">
-                <h2 class="text-5xl font-semibold">Находите попутчиков быстро и удобно</h2>
-                <p class="text-xl mt-4">Экономьте на поездках и находите компанию для путешествий</p>
-            </main>
-            
-            <section class="w-full max-w-4xl text-center mt-10 p-6 bg-gray-800 bg-opacity-75 rounded-lg">
-                <h3 class="text-3xl font-semibold mb-4">О нас</h3>
-                <p class="text-lg">CarTrips Connect — это платформа, созданная для удобного поиска попутчиков. Мы помогаем людям находить совместные поездки, экономить деньги и делать путешествия комфортнее.</p>
-            </section>
-            
-            <footer class="w-full max-w-4xl text-center mt-6 p-6 bg-gray-900 bg-opacity-75 rounded-lg">
-                <h3 class="text-3xl font-semibold mb-4">Контакты</h3>
-                <p class="text-lg">Email: <a href="mailto:support@cartrips.com" class="text-blue-400 hover:underline">support@cartrips.com</a></p>
-                <p class="text-lg mt-2 flex justify-center items-center">
-                    Telegram:<a href="https://t.me/car_trips">&nbsp;cat_trips</a>
-                    <a href="https://t.me/car_trips" class="ml-2">
-                        <img style="diaplsy: inline-block;" src="{% static 'images/tg_logo.png' %}" alt="Telegram" class="w-8 h-8">
-                    </a>
-                </p>
-            </footer>
-        </div>
+        <main class="main text-center">
+            <h2>Находите попутчиков быстро и удобно</h2>
+            <p style="margin-bottom: 20px">Экономьте на поездках и находите компанию для путешествий</p>
+        </main>
+        
+        <section class="section">
+            <h3>О нас</h3>
+            <p>CarTrips Connect — это платформа, созданная для удобного поиска попутчиков. Мы помогаем людям находить совместные поездки, экономить деньги и делать путешествия комфортнее.</p>
+        </section>
+        
+        <footer class="footer">
+            <h3>Контакты</h3>
+            <p>Email: <a href="#">Временно отсутствует</a></p>
+            <p>
+                Telegram: <a href="https://t.me/car_trips">@car_trips</a>
+                <a href="https://t.me/car_trips">
+                    <img src="{% static 'images/tg_logo.png'%}" alt="Telegram" class="tg-logo">
+                </a>
+            </p>
+        </footer>
     </div>
 </body>
 </html>

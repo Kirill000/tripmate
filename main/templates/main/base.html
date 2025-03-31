@@ -17,8 +17,8 @@
 
   <header>
     <div>
-      <a href="{% url 'profile' request.user.id %}">My Profile</a>
-      <a href="/">Map</a>
+      <a style="margin-left: 0px" href="{% url 'profile' request.user.id %}">My Profile</a>
+      <a href="/map">Map</a>
       <a href="{% url 'dialog_list' %}">Chats</a>
       <form method="post" action="{% url 'logout' %}" style="display: inline; margin-right: auto;">
         {% csrf_token %}

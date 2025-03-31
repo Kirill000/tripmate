@@ -115,7 +115,7 @@ function loadMarkers(){
     const currentTime = `${year}-${month}-${day}T${hours}:${minutes}`;
 
     if (~isDetailsOpen) {
-    fetch(`markers/?lat=${center.lat}&lon=${center.lng}&radius=${distance}&ctime=${currentTime}`)
+    fetch(`/markers/?lat=${center.lat}&lon=${center.lng}&radius=${distance}&ctime=${currentTime}`)
         .then(response => response.json())
         .then(data => {
 

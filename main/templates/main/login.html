@@ -8,6 +8,15 @@
     <title>Login</title>
     <link href="{% static 'css/login.css' %}" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="{% static "images/carmap.png" %}">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f0f2f5;
+            font-family: "Segoe UI", sans-serif;
+            background: url({% static 'images/background.jpg' %});
+            }
+    </style>
 </head>
 <body>
     <div class="login-page">
@@ -15,17 +24,15 @@
             <h2>Вход в систему</h2>
             <form method="post" class="login-form">
                 {% csrf_token %}
-                {% for field in form %}
-                    <div class="form-group">
-                        {{ field.label_tag }}
-                        {{ field }}
-                        {% if field.errors %}
-                            <div class="field-errors">
-                                {{ field.errors }}
-                            </div>
-                        {% endif %}
-                    </div>
-                {% endfor %}
+                <div class="form-group">
+                    <label for="id_username">Username:</label>
+                    <input type="text" name="username" maxlength="150" required="" aria-describedby="id_username_helptext" id="id_username">
+                </div>
+                <div class="form-group">
+                    <label for="id_password">Password:</label>
+                    <input name="password" type="password" maxlength="128" required="" id="id_password">
+                </div>
+
                 {% if form.non_field_errors %}
                     <div class="non-field-errors">
                         {{ form.non_field_errors }}

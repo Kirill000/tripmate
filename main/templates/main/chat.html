@@ -78,12 +78,19 @@
 {% block extra_js %}
 <script>
 
+  let scrollbox = document.getElementById('chat-box');
+  let lastScrollTop = scrollbox.scrollTop;
+    
+  if (scrollbox) {
+      scrollbox.addEventListener("scroll", function () {
+            lastScrollTop = scrollbox.scrollTop;
+      });
+  }
+
   //let user_query_data = "{{ user_query_data }}";  // ← заранее объявляем переменную
 
   function loadMessages() {
 
-    let box = document.getElementById('chat-box');
-    let lastScrollTop = box.scrollTop;
     let user_id = "{{request.user.id}}";
 
     fetch("{% url 'get_messages' marker.id to_user.id %}")
@@ -93,9 +100,6 @@
 
         box.innerHTML = '';  // Очищаем чат
         data.messages.forEach(m => {
-          console.log(m);
-          // Если сообщение от текущего пользователя, добавляем класс .from-user, если от собеседника - .to-user
-          console.log(m.notify_type);
           let messageClass = m.from === '{{ request.user.username }}' ? 'from-user' : 'to-user';
           
           if (m.notify_type == 'user_query') {
@@ -109,29 +113,12 @@
               <button class="user-query-reply" onclick='SendMessage(1, "decline")' id="decline">Decline</button>
               {% endif %}
             </p>`;
-            /*
-            {% if request.user.id == marker.user.id %}
-            console.log('init', document.getElementById("approve"));
-            document.getElementById("approve").addEventListener('click', function(e){
-              console.log('called')
-              e.preventDefault();
-              SendMessage(1, "approve");
-            })
-
-            document.getElementById("decline").addEventListener('click', function(e){
-              e.preventDefault();
-              SendMessage(1, "decline");
-            })
-            {% endif %}*/
           } else {
             box.innerHTML += `<p class="message ${messageClass}"><strong>${m.from}</strong> ${m.text} <span class="timestamp">${m.timestamp.split(" ")[1]}</span></p>`;
           }
         });
-        box.scrollTop = box.scrollHeight; // Прокручиваем чат до конца
+        //box.scrollTop = lastScrollTop; // Прокручиваем чат до конца
       });
-
-    box.scrollTop = lastScrollTop;
-
   }
 
 setInterval(loadMessages, 3000); // обновление сообщений каждую 3 секунды

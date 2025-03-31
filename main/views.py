@@ -12,12 +12,30 @@ from math import radians, cos, sin, asin, sqrt
 import os
 from django.core.mail import EmailMessage
 import random
+from django.contrib.auth.forms import AuthenticationForm
 from TripMate.settings import EMAIL_HOST_USER
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def main(request):
     return render(request, 'main/main.html')
+
+def login_user(request):
+    if request.user.is_authenticated:
+        return redirect('map')
+    if request.method == 'POST':
+        
+        form = AuthenticationForm(request, data=request.POST)
+        
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            return redirect('map')
+        else:
+            messages.error(request, 'Неверный логин или пароль')
+            return render(request, 'main/login.html')
+            
+    return render(request, 'main/login.html')
 
 # Отправка кода на email
 def send_reset_code(request, user):
@@ -31,7 +49,6 @@ def send_reset_code(request, user):
         usr.timestamp = timezone.now()
         usr.save()
     except Exception as error:
-        print(error)
         UsersConfirmationTable.objects.update_or_create(user=user, defaults={'conf_pwd': code, 'timestamp': timezone.now()})
 
     mail_subject = 'CarTrips: Восстановление пароля'
@@ -71,11 +88,9 @@ def reset_password_confirm(request):
                 messages.success(request, 'Пароль успешно изменён! Войдите с новым паролем.')
                 return redirect('login')
             else:
-                print('wrong code')
                 messages.error(request, 'Неверный код подтверждения!')
         
         except (User.DoesNotExist, UsersConfirmationTable.DoesNotExist):
-            print('Ошибка. Повторите попытку.')
             messages.error(request, 'Ошибка. Повторите попытку.')
 
     return render(request, 'main/password_reset_code.html', {'email': request.POST.get('email')})
@@ -93,7 +108,6 @@ def send_confirmation_email(user, request):
         u.conf_pwd = conf_num
         u.save()
     except Exception as error:
-        print(error)
         UsersConfirmationTable.objects.update_or_create(user=user, conf_pwd=conf_num, timestamp=timezone.now())
 
     mail = EmailMessage(subject=mail_subject, body=f"Ваш пароль для подтверждения входа в сервис: {conf_num}.\nПроигнорируйте это письмо если считаете, что письмо пришло по ошибке.", from_email=EMAIL_HOST_USER, to=[user.email])
@@ -109,7 +123,6 @@ def register(request):
             send_confirmation_email(user, request)
             return render(request, 'main/register.html', {'confirmation': 1, 'email': user.email, 'username': user.username})
         except Exception as error:
-            print(error)
             if form.is_valid():
                 user = form.save(commit=False)
                 user.set_password(form.cleaned_data['password'])
@@ -125,7 +138,6 @@ def register(request):
             
     elif request.method == 'POST' and 'confirmation' in request.POST:
         conf_pwd = request.POST['conf_pwd']
-        print(request.POST['username'], 'us')
         user = User.objects.get(username=request.POST['username'])
         conf_pwd_object = UsersConfirmationTable.objects.get(user=user.id)
         if str(conf_pwd) == str(conf_pwd_object.conf_pwd):
@@ -148,7 +160,6 @@ def chat_page(request, marker_id, to_user_id):
     to_user = get_object_or_404(User, pk=to_user_id)
     
     #проверка на диалог с самим собой
-    print(request.user, to_user.username)
     if request.user.id != to_user.id:
             
         try:
@@ -308,7 +319,6 @@ def nearby_markers(request):
         lat = float(request.GET.get("lat"))
         lon = float(request.GET.get("lon"))
         radius = float(request.GET.get("radius", 10))  # радиус в км, по умолчанию 10 км
-        print(lat, lon, radius)
     except (TypeError, ValueError):
         return JsonResponse({"error": "Invalid parameters"}, status=400)
     
@@ -346,7 +356,6 @@ def nearby_markers(request):
                 "users": marker.users,  # JSON-поле
                 "distance_km": round(distance, 2),
             })
-            print(marker.start_lat, marker.start_lon, distance)
 
     nearby.sort(key=lambda x: x["distance_km"])  # сортируем по расстоянию
     return JsonResponse({"markers": nearby})
@@ -412,10 +421,8 @@ def add_marker(request):
 
 @login_required(login_url='login')
 def profile(request, user_id):
-    print(os.getcwd())
     cwd = os.getcwd()
     time_value = request.headers.get('X-Timestamp')
-    print(time_value)
     
     #получаем объект просматриваемого пользователя из двух моделей
     viewed_user = get_object_or_404(User, id=user_id)
@@ -448,10 +455,8 @@ def profile(request, user_id):
             
     for marker in own_markers_raw:
         if timezone.now()-marker.active_to >= timedelta(days=2):
-            print('deleted')
             marker.delete()
         elif marker.active_to <= timezone.now():
-            print(marker)
             marker.is_active = False
             marker.save()
             marker.refresh_from_db()

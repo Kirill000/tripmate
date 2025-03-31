@@ -1,11 +1,4 @@
 /* Общие стили */
-body {
-    margin: 0;
-    padding: 0; 
-    background: #f0f2f5;
-    font-family: 'Segoe UI', sans-serif;
-    background: linear-gradient(135deg, #e0f7fa, #fff);
-  }
   
   .register-page {
     display: flex;
