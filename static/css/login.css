@@ -1,0 +1,113 @@
+/* Общие стили */
+
+.login-page {
+display: flex;
+justify-content: center;
+align-items: center;
+min-height: 100vh;
+padding: 20px;
+}
+
+.login-form-container {
+background: #fff;
+border-radius: 16px;
+box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+padding: 40px;
+width: 100%;
+max-width: 500px;
+min-width: 350px;
+box-sizing: border-box;
+}
+
+/* Заголовок */
+.login-form-container h2 {
+text-align: center;
+margin-bottom: 30px;
+font-size: 28px;
+}
+
+/* Группа полей */
+.form-group {
+margin-bottom: 20px;
+}
+
+.form-group label {
+display: block;
+margin-bottom: 6px;
+font-weight: 600;
+color: #333;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+width: 100%;
+padding: 10px 12px;
+border: 1px solid #ccc;
+border-radius: 8px;
+font-size: 16px;
+box-sizing: border-box;
+transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+outline: none;
+border-color: #4a90e2;
+}
+
+/* Ошибки */
+.field-errors {
+margin-top: 6px;
+background: #ffe6e6;
+border: 1px solid #e74c3c;
+padding: 8px 12px;
+border-radius: 6px;
+color: #c0392b;
+font-size: 14px;
+}
+
+.non-field-errors {
+margin-bottom: 16px;
+background: #ffe6e6;
+border: 1px solid #e74c3c;
+padding: 10px 14px;
+border-radius: 6px;
+color: #c0392b;
+font-size: 15px;
+}
+
+/* Кнопка */
+.login-button {
+width: 100%;
+background-color: #4a90e2;
+color: white;
+border: none;
+padding: 14px;
+border-radius: 10px;
+font-size: 16px;
+font-weight: 600;
+cursor: pointer;
+transition: background 0.3s ease;
+}
+
+.login-button:hover {
+background-color: #357ab8;
+}
+
+/* Ссылка на регистрацию */
+.register-text {
+text-align: center;
+margin-top: 25px;
+font-size: 14px;
+}
+
+.register-text a {
+color: #4a90e2;
+text-decoration: none;
+}
+
+.register-text a:hover {
+text-decoration: underline;
+}
