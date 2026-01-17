@@ -11,3 +11,7 @@ This project is built with a modern web development stack:
 *   **Database:** PostgreSQL
 *   **Map API:** 2GIS
 *   **Version Control:** Git & GitHub
+
+## Status
+
+Right now on release stage, resolving some issues 
